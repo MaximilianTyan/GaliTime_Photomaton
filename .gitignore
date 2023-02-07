@@ -1,3 +1,14 @@
+#Configuration files
+.vscode/
+.pylintrc
+
+# Image files
+test-folder/
+*.mjpg
+
+# Log file
+*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
