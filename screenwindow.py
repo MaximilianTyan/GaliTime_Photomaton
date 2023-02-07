@@ -1,112 +1,205 @@
 #!/bin/env python3
-#encoding:utf-8
-#coding:utf-8
+# encoding:utf-8
+# coding:utf-8
 
-from PyQt5.QtWidgets import QMainWindow, QLabel, QFrame, QVBoxLayout
-from PyQt5.QtGui import QPixmap
+""" Screen window, contains screen class and control options
+"""
+
+import logging
+
+import os
+import atexit
+
+from PyQt5.QtWidgets import QMainWindow, QLabel
+from PyQt5.QtGui import QPixmap, QPainter
 from PyQt5.QtWidgets import QShortcut
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
-import vlc
+logger = logging.getLogger(__name__)
+logger.propagate = True
+
+ENCODING = "utf-8"
+
+FPS = 30
+RESTART_INTERVAL = 30
+
 
 class ScreenWindow(QMainWindow):
-	def __init__(self, cam):
-		super().__init__()
-		self.setWindowTitle("Aperçu")
+    """ScreenWindow : Windows designed to hold the live screen where images will be displayed."""
 
-		self.cam = cam
-		self.decorFile = ""
-		
-		self.screenPage()
-		
-		self.show()
-		
-		self.shortcutSetup()
-		self.setupMedia()
-	
-	def setupMedia(self):
-		# Setup VLC video manager
-		self.VLCinstance = vlc.Instance()
-		self.VLCmediaplayer = self.VLCinstance.media_player_new()
+    def __init__(self, cam):
+        super().__init__()
+        self.setWindowTitle("Aperçu")
+        self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
 
-		# Link Media player output to a widget
-		self.VLCmediaplayer.set_xwindow(int(self.screen.winId()))
+        self.cam = cam
+        self.decorFile = ""
 
-		# Return input handling to Qt Widget
-		self.VLCmediaplayer.video_set_mouse_input(False)
-		self.VLCmediaplayer.video_set_key_input(False)
+        self.text = ""
 
-		self.VLCmediaplayer.event_manager() \
-			.event_attach(
-				vlc.EventType.MediaPlayerStopped, 
-				self.reset)
+        self.defaultImage = QPixmap("ressources/default_cam_view.png")
+        self.decorImage = QPixmap(self.decorFile)
+        self.screenImage = QPixmap()
 
-	def shortcutSetup(self):
-		self.FullScreenSC = QShortcut("F11", self)
-		self.FullScreenSC.activated.connect(self.toggleFullscreen)
+        self.screenPage()
+        self.show()
 
-	def toggleFullscreen(self, *args):
-		self.close()
-		if self.isFullScreen():
-			self.showNormal()
-		else:
-			self.showFullScreen()
+        self._shortcutSetup()
+        self._setupPreviewTimers()
 
-	
-	def screenPage(self):
-		self.label = QLabel()
+        atexit.register(self._cleanUp)
 
-		self.defaultImage = QPixmap("ressources/default_cam_view.png")
-		self.label.setPixmap(self.defaultImage)
+    def setDecorFile(self, decorFile: str) -> None:
+        """setDecorFile : Set decor file and update image into memory.
 
-		self.label.setAlignment(Qt.AlignCenter)
-		self.label.setStyleSheet("font-size: 100px; \
-			color:white; \
-			background-color: transparent")
+        Args:
+            decorFile (str): filepath to image file
+        """
+        self.decorFile = decorFile
+        self.decorImage.load(decorFile)
 
+    def getDecorFile(self) -> str:
+        """getDecorFile : Returns decor image filepath.
 
-		self.screen = QFrame()
+        Returns:
+            str: decor image filepath
+        """
+        return self.decorFile
 
-		# Layout allowing screen to have the same size as label
-		layout = QVBoxLayout()
-		layout.setContentsMargins(0, 0, 0, 0)
-		layout.setSpacing(0)
-		self.label.setLayout(layout)
-		layout.addWidget(self.screen)
+    def isPreviewing(self) -> bool:
+        """isPreviewing : return true if the preview process is active, false otherwise
 
+        Returns:
+            bool: preview process active
+        """
+        return self.cam.isPreviewing
 
-		self.setCentralWidget(self.label)
-		self.reset()
+    def _setupPreviewTimers(self):
+        self.updateTimer = QTimer()
+        self.updateTimer.timeout.connect(self._updatePreview)
 
-	def showText(self, text):
-		self.label.setText(str(text))
-	
-	def reset(self, *args):
-		self.label.setPixmap(self.defaultImage)
+        self.restartTimer = QTimer()
+        self.restartTimer.timeout.connect(self.restartPreview)
 
-	def resetOnMediaEnd(self, Event):
-		if self.VLCmedia.get_state() == vlc.State.Ended:
-			self.reset()
+    def _shortcutSetup(self):
+        self.FullScreenSC = QShortcut("F11", self)
+        self.FullScreenSC.activated.connect(self.toggleFullscreen)
 
+    def toggleFullscreen(self) -> None:
+        """toggleFullscreen : Alternates bewteen fullscreen and normal (window) display."""
+        if self.isFullScreen():
+            self.showNormal()
+        else:
+            self.showFullScreen()
 
-	def startPreview(self):
-		# Launching capture command
-		self.cam.start_preview()
+    def screenPage(self) -> None:
+        """screenPage : Loads the screen page widgets and sets it as page."""
+        self.Screen = QLabel("")
+        self.Screen.setAlignment(Qt.AlignCenter)
+        self.Screen.setMaximumSize(1920, 1080)
+        self.Screen.setPixmap(self.defaultImage)
 
-		self.VLCmedia = self.VLCinstance.media_new("movie.mjpg")
-		self.VLCmedia.parse()
-		self.VLCmedia.event_manager() \
-			.event_attach(
-				vlc.EventType.MediaStateChanged, 
-				self.resetOnMediaEnd)
+        self.Screen.setScaledContents(True)
 
-		self.VLCmediaplayer.set_media(self.VLCmedia)
-		self.VLCmediaplayer.play()
+        self.setCentralWidget(self.Screen)
+        self.reset()
 
-		self.showText(None)
-	
-	def stopPreview(self):
-		self.VLCmediaplayer.stop()
-		self.reset()
-	
-	
+    def showText(self, text: str) -> None:
+        """showText : Displays text to display on image and displays it.
+
+        Args:
+            text (str): Text to display
+        """
+        self.text = str(text)
+        if not self.isPreviewing():
+            self.updateScreen()
+
+    def displayImage(self, imagepath: str) -> None:
+        """displayImage : Loads and displays image from supplied imagepath.
+
+        Args:
+            imagepath (str): Path to the image (absolute or relative)
+        """
+        self.screenImage.load(imagepath)
+        if not self.isPreviewing():
+            self.updateScreen()
+
+    def reset(self) -> None:
+        """reset : Resets screen to default image and clears text."""
+        self.Screen.setPixmap(self.defaultImage)
+        self.Screen.setText("")
+        self.Screen.adjustSize()
+
+    def startPreview(self) -> None:
+        """startPreview : Starts the preview process, setting it to 30 fps ideally, being limited by the camera throughput.
+        A preview restart will occur every 30 seconds to keep the camera output stream file size limited.
+        """
+        self.reset()
+
+        # Launching capture command
+        logger.info("Preview started with %(FPS)u fps")
+        self.cam.startPreview()
+
+        self.updateTimer.start(round(1000 / FPS))
+        self.restartTimer.start(RESTART_INTERVAL * 1000)
+
+    def _updatePreview(self) -> None:
+        """_updatePreview : internal update timer callback.
+        Updating the screen with last frame available from the camera.
+        """
+        self.screenImage.loadFromData(self.cam.readPreview())
+        self.updateScreen()
+
+    def updateScreen(self) -> None:
+        """updateScreen : Updates the screen with the base image, in addition to decorfile and text overlayed in that order."""
+        if self.screenImage.isNull():
+            # logger.error("Screen Image is NULL, returning from updateScreen")
+            return
+
+        painter = QPainter(self.screenImage)
+        font = painter.font()
+        font.setPointSize(100)
+        painter.setFont(font)
+
+        width, height = self.screenImage.width(), self.screenImage.height()
+
+        painter.drawPixmap(0, 0, width, height, self.decorImage)
+        painter.drawText(0, 0, width, height, Qt.AlignCenter, str(self.text))
+
+        self.Screen.setPixmap(self.screenImage)
+
+    def stopPreview(self) -> None:
+        """stopPreview : Stops the preview process and restores camera connection."""
+        self.cam.stopPreview()
+        self.updateTimer.stop()
+        self.restartTimer.stop()
+
+        self.cam.connect()
+        self.reset()
+
+    def restartPreview(self) -> None:
+        """restartPreview : Stops and restarts the preview process, see startPreview and stopPreview for more information."""
+        logger.info("Restarting Preview")
+        self.stopPreview()
+        self.startPreview()
+
+    def saveImage(self, filepath: str) -> str:
+        """saveImage : Saves the image currently displayed on screen (including decor and text) at the filepath.
+
+        Args:
+            filepath (str): Filepath with filename to save the image
+
+        Returns:
+            str: Filepath where the image was saved (should correpond to suppied filename)
+        """
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        self.screenImage.save(filepath)
+
+        return filepath
+
+    def _cleanUp(self):
+        if self.updateTimer.isActive():
+            self.updateTimer.stop()
+        if self.restartTimer.isActive():
+            self.updateTimer.stop()
