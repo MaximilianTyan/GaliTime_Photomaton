@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 ENCODING = "utf-8"
-DATEFORMAT = "yyyy-MM-dd"
 TEMPFILE = "{}/temp.jpeg"
 
 
@@ -143,160 +142,7 @@ def cancelOptions(self) -> None:
 # Folder management
 
 
-def loadSaveFolder(self, folder: str = None) -> None:
-    """
-    loadSaveFolder : Loads event information from the folder supplied via "folder" argument.
-    If None is supplied, user will be prompt with a file dialog to choose it.
 
-    Args:
-        folder (str, optional): File path to the event folder that should be loaded.
-                                Defaults to None.
-    """
-    if folder is None:
-        folder = QFileDialog.getExistingDirectory(
-            self, caption="Select an Event Folder"
-        )
-
-    if len(folder) == 0:
-        return
-    folder += "/"
-
-    logger.debug("Loading folder %s", folder)
-
-    if not os.path.exists(folder + "info.json"):
-        QMessageBox.critical(
-            self,
-            "Loading error",
-            f"No info.json file found in\n{folder}\n Aborting load operation\n\nInvalid folder",
-        )
-        return
-
-    with open(folder + "info.json", "rt", encoding=ENCODING) as file:
-        infoDict = json.load(file)
-
-    # File structure checking
-    self.saveFolder = infoDict.get("saveFolder", None)
-    if self.saveFolder is None:
-        QMessageBox.critical(
-            self,
-            "Loading error",
-            """No save folder was supplied in info.json
-            Aborting load operation\n
-            No save folder supplied""",
-        )
-        return
-
-    if not os.path.exists(self.saveFolder):
-        QMessageBox.critical(
-            self,
-            "Loading error",
-            """Save folder supplied in info.json does not exist
-            Aborting load operation\n
-            Save folder does not exist""",
-        )
-        return
-
-    if not os.path.exists(self.saveFolder + "raw_photos"):
-        QMessageBox.warning(
-            self,
-            "Loading error",
-            f"No raw_photos in \n{folder}\n Creating an empty one\n\nraw_photos folder missing",
-        )
-        os.mkdir(self.saveFolder + "raw_photos")
-    self.photoFolder = self.saveFolder + "raw_photos/"
-
-    if not os.path.exists(self.saveFolder + "emails"):
-        QMessageBox.warning(
-            self,
-            "Loading error",
-            f"""No emails in {folder}
-            Creating an empty one
-            'emails/' folder missing""",
-        )
-        os.mkdir(self.saveFolder + "emails")
-    self.emailFolder = self.saveFolder + "emails/"
-
-    # Content checking
-    requiredKeys = {
-        "eventName": "Event (DEFAULT NAME)",
-        "eventDate": QDate.currentDate().toString(DATEFORMAT),
-        "saveFolder": self.saveFolder,
-        "photoNumber": len(os.listdir(self.photoFolder)),
-        "emailNumber": len(os.listdir(self.emailFolder)),
-    }
-
-    for attr, attrValue in requiredKeys.items():
-        if attr not in infoDict.keys():
-            QMessageBox.critical(
-                self,
-                "Invalid info file",
-                f'Property "{attr}" missing from info file, \
-                returning to default value: {attrValue}',
-            )
-            object.__setattr__(self, attr, attrValue)
-        else:
-            object.__setattr__(self, attr, infoDict[attr])
-
-    logger.debug("Loaded folder successfully")
-
-    writeInfoFile(self)
-    self.optionsPage()
-    changeEventName(self)
-    changeEventDate(self)
-
-
-def initSaveFolder(self) -> None:
-    """
-    initSaveFolder : Create an event folder at the saveFolder path.
-    """
-    name = self.saveFolder.split("/")[-2] + "/"
-    path = self.saveFolder.rstrip(name)
-
-    if os.path.exists(self.saveFolder):
-        YNButton = QMessageBox.question(
-            self,
-            "Folder already exists",
-            f"""Folder {name} already exists in f{path}
-            Do you want to overwrite it ? All previous data will be lost""",
-        )
-        if YNButton != QMessageBox.Yes:
-            return
-
-        for file in os.listdir(self.saveFolder):
-            os.remove(self.saveFolder + file)
-
-    createFolderScructure(self.saveFolder)
-    writeInfoFile(self)
-
-
-def createFolderScructure(saveFolder: str) -> None:
-    """
-    createFolderScructure : Create folder structure of an event folder
-
-    Args:
-        saveFolder (str): folder path in witch the event file structure will be created
-    """
-    os.mkdir(saveFolder)
-    os.mkdir(saveFolder + "raw_photos")
-    os.mkdir(saveFolder + "emails")
-
-
-# Info file
-
-
-def writeInfoFile(self) -> None:
-    """
-    writeInfoFile : Write event info to the save file
-    """
-    infodict = {
-        "eventName": self.eventName,
-        "eventDate": self.eventDate,
-        "saveFolder": self.saveFolder,
-        "photoNumber": self.photoNumber,
-        "emailNumber": self.emailNumber,
-    }
-    with open(self.saveFolder + "info.json", "wt", encoding=ENCODING) as file:
-        json.dump(infodict, file, indent=4)
 
 
 # Timer functions
@@ -360,7 +206,7 @@ def takePhoto(self):
     self.screen.displayImage(rawPhoto)
 
     self.photoNumber += 1
-    self.crtPhotoPath = self.screen.saveImage(TEMPFILE.format(self.saveFolder))
+    self.crtPhotoPath = self.screen.saveImage(self.saveFolder + TEMPFILE)
 
 
 def printImage(self):
