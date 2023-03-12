@@ -12,21 +12,21 @@ import shutil
 
 from PyQt5.QtWidgets import QInputDialog
 
+from constants import ENCODING
+
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-ENCODING = "utf-8"
 INFOFILE = "email.json"
 
 
 class EmailManager:
     """emailManager : Class responsible for managing mail storage and access"""
 
-    def __init__(self, emailFolder: str) -> None:
-        self.setEmailFolder(emailFolder)
-        self.emailNumber = len(os.listdir(emailFolder))
+    emailFolder = None
 
-    def setEmailFolder(self, folderpath: str) -> None:
+    @classmethod
+    def setEmailFolder(cls, folderpath: str) -> None:
         """setEmailFolder : Sets the emails folder path
 
         Args:
@@ -34,9 +34,21 @@ class EmailManager:
         """
         if not folderpath.endswith("/"):
             folderpath += "/"
-        self.emailFolder = folderpath
+        cls.emailFolder = folderpath
 
-    def createMail(self, mail: str) -> str:
+    @classmethod
+    def getEmailNumber(cls) -> int:
+        """
+        getEmailNumber : Returns the number of email adresses stored
+
+        Returns:
+            int: Number of email addresses
+        """
+
+        return len(os.listdir(cls.emailFolder))
+
+    @classmethod
+    def createMail(cls, mail: str) -> str:
         """createMail : Creates a folder for the supplied email
 
         Args:
@@ -45,7 +57,7 @@ class EmailManager:
         Returns:
             str: folderpath to the email folder
         """
-        mailPath = self.emailFolder + mail.replace("/", " ")
+        mailPath = cls.emailFolder + mail.replace("/", " ")
         os.mkdir(mailPath)
 
         mailDict = {
@@ -54,11 +66,11 @@ class EmailManager:
         }
         with open(mailPath + "/email.json", "wt", encoding=ENCODING) as file:
             json.dump(mailDict, file, indent=4)
-        self.emailNumber += 1
 
         return mailPath
 
-    def getMail(self, mail: str) -> str:
+    @classmethod
+    def getMail(cls, mail: str) -> str:
         """getMail : Retrieves folderpath to the mail folder.
 
         Args:
@@ -67,12 +79,13 @@ class EmailManager:
         Returns:
             str: Filepath to the email folder, empty string if not found.
         """
-        mailPath = self.emailFolder + mail.replace("/", " ")
+        mailPath = cls.emailFolder + mail.replace("/", " ")
         if not os.path.exists(mailPath):
             return ""
         return mailPath
 
-    def _readEmailInfo(self, mail: str) -> dict:
+    @classmethod
+    def _readEmailInfo(cls, mail: str) -> dict:
         """_readEmailInfo : Returns email info json file as dict object.
 
         Args:
@@ -82,27 +95,29 @@ class EmailManager:
             dict: Python representation of the JSON file
         """
         with open(
-            self.emailFolder + mail + "/" + INFOFILE, "rt", encoding=ENCODING
+            cls.emailFolder + mail + "/" + INFOFILE, "rt", encoding=ENCODING
         ) as file:
             return json.load(file)
 
-    def _writeEmailInfo(self, infoDict: dict) -> None:
+    @classmethod
+    def _writeEmailInfo(cls, infoDict: dict) -> None:
         """_writeEmailInfo _summary_
 
         Args:
             infoDict (dict): _description_
         """
-        with open(self.emailFolder + INFOFILE, "wt", encoding=ENCODING) as file:
+        with open(cls.emailFolder + INFOFILE, "wt", encoding=ENCODING) as file:
             json.dump(file, infoDict)
 
-    def addPhotoToMail(self, photoPath: str) -> None:
+    @classmethod
+    def addPhotoToMail(cls, photoPath: str) -> None:
         """addPhotoToMail
 
         Args:
             photoPath (str): photo filepath to add to email
         """
         mailStr = QInputDialog.getText(
-            self,
+            cls,
             "Emails (séparés par des virgules)",
             "Votre ou vos emails séparés par des virgules",
         )
@@ -110,9 +125,9 @@ class EmailManager:
 
         for mail in mailList:
 
-            mailPath = self.getMail(mail)
+            mailPath = cls.getMail(mail)
             if len(mailPath) == 0:
-                mailPath = self.createMail(mail)
+                mailPath = cls.createMail(mail)
 
             if len(photoPath) == 0:
                 logger.error("No photo supplied")
@@ -120,6 +135,6 @@ class EmailManager:
 
             shutil.copy(photoPath, mailPath)
 
-            mailDict = self._readEmailInfo(mail)
+            mailDict = cls._readEmailInfo(mail)
             mailDict["photoNumber"] += 1
-            self._writeEmailInfo(mailDict)
+            cls._writeEmailInfo(mailDict)

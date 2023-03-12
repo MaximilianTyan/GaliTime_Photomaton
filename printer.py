@@ -10,8 +10,24 @@ logger.propagate = True
 
 
 class ImagePrinter:
+    """
+    ImagePrinter : Handles printer jobs and interactions
+    """
+
+    PrinterInstance = None
+
     def __init__(self):
-        pass
+        ImagePrinter.PrinterInstance = self
+
+    @classmethod
+    def getPrinter(cls) -> object:
+        """
+        getPrinter : Returns the current printer instance
+
+        Returns:
+            ImagePrinter: Current printer instance
+        """
+        return cls.PrinterInstance
 
     def printImage(self, filepath):
         result = subprocess.run(["lp", filepath, "-o=4"], check=True)

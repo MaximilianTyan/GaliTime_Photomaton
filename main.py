@@ -18,13 +18,12 @@ from printer import ImagePrinter
 
 # Format setup ----------------------------------
 
-ENCODING = "utf-8"
-FORMAT = "%(asctime)s [%(levelname)s] (%(module)s) %(lineno)d : %(message)s"
+from constants import ENCODING, LOGGERFORMAT
 
-logging.basicConfig(format=FORMAT, level=0)
+logging.basicConfig(format=LOGGERFORMAT, level=0)
 
 handler = logging.FileHandler("logs/galitime.log", "wt", encoding=ENCODING)
-formatter = logging.Formatter(FORMAT)
+formatter = logging.Formatter(LOGGERFORMAT)
 handler.setFormatter(formatter)
 
 rootlogger = logging.getLogger()
@@ -36,8 +35,8 @@ app = QApplication(sys.argv)
 
 cam = CameraWrapper()
 printer = ImagePrinter()
-screen = ScreenWindow(cam)
-main = ControlWindow(screen, cam, printer, sys.argv)
+screen = ScreenWindow()
+main = ControlWindow()
 
 # App execution -----------------------------------
 

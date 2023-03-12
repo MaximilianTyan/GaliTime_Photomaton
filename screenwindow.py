@@ -15,24 +15,28 @@ from PyQt5.QtGui import QPixmap, QPainter
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtCore import Qt, QTimer
 
+from camera import CameraWrapper
+
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-ENCODING = "utf-8"
 
 FPS = 30
 RESTART_INTERVAL = 30
 
 
 class ScreenWindow(QMainWindow):
-    """ScreenWindow : Windows designed to hold the live screen where images will be displayed."""
+    """
+    ScreenWindow : Windows designed to hold the live screen where images will be displayed.
+    """
 
-    def __init__(self, cam):
+    ScreenInstance = None
+
+    def __init__(self):
         super().__init__()
         self.setWindowTitle("Aperçu")
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
 
-        self.cam = cam
+        self.cam = CameraWrapper.getCamera()
         self.decorFile = ""
 
         self.text = ""
@@ -49,8 +53,21 @@ class ScreenWindow(QMainWindow):
 
         atexit.register(self._cleanUp)
 
+        ScreenWindow.ScreenInstance = self
+
+    @classmethod
+    def getScreen(cls) -> QMainWindow:
+        """
+        getScreen : Returns the current screen window instance
+
+        Returns:
+            ScreenWindow: Current screen window
+        """
+        return cls.ScreenInstance
+
     def setDecorFile(self, decorFile: str) -> None:
-        """setDecorFile : Set decor file and update image into memory.
+        """
+        setDecorFile : Set decor file and update image into memory.
 
         Args:
             decorFile (str): filepath to image file
@@ -59,7 +76,8 @@ class ScreenWindow(QMainWindow):
         self.decorImage.load(decorFile)
 
     def getDecorFile(self) -> str:
-        """getDecorFile : Returns decor image filepath.
+        """
+        getDecorFile : Returns decor image filepath.
 
         Returns:
             str: decor image filepath
@@ -67,7 +85,8 @@ class ScreenWindow(QMainWindow):
         return self.decorFile
 
     def isPreviewing(self) -> bool:
-        """isPreviewing : return true if the preview process is active, false otherwise
+        """
+        isPreviewing : return true if the preview process is active, false otherwise
 
         Returns:
             bool: preview process active
@@ -86,14 +105,18 @@ class ScreenWindow(QMainWindow):
         self.FullScreenSC.activated.connect(self.toggleFullscreen)
 
     def toggleFullscreen(self) -> None:
-        """toggleFullscreen : Alternates bewteen fullscreen and normal (window) display."""
+        """
+        toggleFullscreen : Alternates bewteen fullscreen and normal (window) display.
+        """
         if self.isFullScreen():
             self.showNormal()
         else:
             self.showFullScreen()
 
     def screenPage(self) -> None:
-        """screenPage : Loads the screen page widgets and sets it as page."""
+        """
+        screenPage : Loads the screen page widgets and sets it as page.
+        """
         self.Screen = QLabel("")
         self.Screen.setAlignment(Qt.AlignCenter)
         self.Screen.setMaximumSize(1920, 1080)
@@ -105,7 +128,8 @@ class ScreenWindow(QMainWindow):
         self.reset()
 
     def showText(self, text: str) -> None:
-        """showText : Displays text to display on image and displays it.
+        """
+        showText : Displays text to display on image and displays it.
 
         Args:
             text (str): Text to display
@@ -115,7 +139,8 @@ class ScreenWindow(QMainWindow):
             self.updateScreen()
 
     def displayImage(self, imagepath: str) -> None:
-        """displayImage : Loads and displays image from supplied imagepath.
+        """
+        displayImage : Loads and displays image from supplied imagepath.
 
         Args:
             imagepath (str): Path to the image (absolute or relative)
@@ -125,13 +150,16 @@ class ScreenWindow(QMainWindow):
             self.updateScreen()
 
     def reset(self) -> None:
-        """reset : Resets screen to default image and clears text."""
+        """
+        reset : Resets screen to default image and clears text.
+        """
         self.Screen.setPixmap(self.defaultImage)
         self.Screen.setText("")
         self.Screen.adjustSize()
 
     def startPreview(self) -> None:
-        """startPreview : Starts the preview process, setting it to 30 fps ideally, being limited by the camera throughput.
+        """
+        startPreview : Starts the preview process, setting it to 30 fps ideally, being limited by the camera throughput.
         A preview restart will occur every 30 seconds to keep the camera output stream file size limited.
         """
         self.reset()
@@ -144,14 +172,17 @@ class ScreenWindow(QMainWindow):
         self.restartTimer.start(RESTART_INTERVAL * 1000)
 
     def _updatePreview(self) -> None:
-        """_updatePreview : internal update timer callback.
+        """
+        _updatePreview : internal update timer callback.
         Updating the screen with last frame available from the camera.
         """
         self.screenImage.loadFromData(self.cam.readPreview())
         self.updateScreen()
 
     def updateScreen(self) -> None:
-        """updateScreen : Updates the screen with the base image, in addition to decorfile and text overlayed in that order."""
+        """
+        updateScreen : Updates the screen with the base image, in addition to decorfile and text overlayed in that order.
+        """
         if self.screenImage.isNull():
             # logger.error("Screen Image is NULL, returning from updateScreen")
             return
@@ -169,7 +200,9 @@ class ScreenWindow(QMainWindow):
         self.Screen.setPixmap(self.screenImage)
 
     def stopPreview(self) -> None:
-        """stopPreview : Stops the preview process and restores camera connection."""
+        """
+        stopPreview : Stops the preview process and restores camera connection.
+        """
         self.cam.stopPreview()
         self.updateTimer.stop()
         self.restartTimer.stop()
@@ -178,13 +211,16 @@ class ScreenWindow(QMainWindow):
         self.reset()
 
     def restartPreview(self) -> None:
-        """restartPreview : Stops and restarts the preview process, see startPreview and stopPreview for more information."""
+        """
+        restartPreview : Stops and restarts the preview process, see startPreview and stopPreview for more information.
+        """
         logger.info("Restarting Preview")
         self.stopPreview()
         self.startPreview()
 
     def saveImage(self, filepath: str) -> str:
-        """saveImage : Saves the image currently displayed on screen (including decor and text) at the filepath.
+        """
+        saveImage : Saves the image currently displayed on screen (including decor and text) at the filepath.
 
         Args:
             filepath (str): Filepath with filename to save the image

@@ -17,10 +17,11 @@ import gphoto2 as gp
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QDateTime
 
+from constants import ENCODING
+
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-ENCODING = "utf-8"
 MOVIEPATH = "movie.mjpg"
 
 STARTBYTES = b"\xFF\xD8\xFF"
@@ -30,7 +31,7 @@ STOPBYTES = b"\xFF\xD9"
 def popError(func) -> callable:
     """
     popError : Decorator aimed at encapsulating a function call in a try/except
-    structure and prompt any error into a popup. This aims at informing about 
+    structure and prompt any error into a popup. This aims at informing about
     camera error (the most common) without having to restart the whole application.
 
     Args:
@@ -57,7 +58,7 @@ def popError(func) -> callable:
 
 class CameraWrapper:
     """
-    Wrapper class for the camera, in charge of creating and managing processes 
+    Wrapper class for the camera, in charge of creating and managing processes
     responsible for previewing images.
     """
 
@@ -80,6 +81,18 @@ class CameraWrapper:
 
         # Ensuring proper cleanup
         atexit.register(self._cleanUp)
+
+        CameraWrapper.CameraInstance = self
+
+    @classmethod
+    def getCamera(cls) -> object:
+        """
+        getCamera : Returns the current camera instance
+
+        Returns:
+            CameraWrapper: Current camera instance
+        """
+        return cls.CameraInstance
 
     def _clearGphoto(self) -> None:
         """
@@ -229,7 +242,7 @@ class CameraWrapper:
         self._closeLog()
 
     @popError
-    def getAbilities(self):
+    def getAbilities(self) -> tuple:
         return tuple(self.cam.get_abilities())
 
     @popError
