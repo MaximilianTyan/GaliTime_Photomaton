@@ -3,7 +3,7 @@
 # encoding:utf-8
 
 """
-    Module defining cross file constants
+Module defining cross file constants
 """
 
 # General

@@ -2,6 +2,10 @@
 # encoding:utf-8
 # coding:utf-8
 
+"""
+Module to handle the event options page
+"""
+
 import logging
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
@@ -11,11 +15,11 @@ from PyQt5.QtWidgets import QAbstractSpinBox
 
 from PyQt5.QtCore import Qt, QDate
 
-from managers.eventmanager import EventManager
-from screenwindow import ScreenWindow
+from ..managers.eventmanager import EventManager
+from ..screenwindow import ScreenWindow
 
-import stylesheet
-from constants import DATEFORMAT
+from .. import stylesheet
+from ..constants import DATEFORMAT
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

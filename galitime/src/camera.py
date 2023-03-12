@@ -17,8 +17,8 @@ import gphoto2 as gp
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QDateTime
 
-from constants import ENCODING, MOVIEPATH
-from constants import STARTBYTES, STOPBYTES
+from .constants import ENCODING, MOVIEPATH
+from .constants import STARTBYTES, STOPBYTES
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -73,7 +73,7 @@ class CameraWrapper:
 
         self.cam = gp.Camera()
 
-        self.logfile = open("logs/camera.log", "wt", encoding=ENCODING)
+        self.logfile = open("galitime/logs/camera.log", "wt", encoding=ENCODING)
 
         # Ensuring proper cleanup
         atexit.register(self._cleanUp)

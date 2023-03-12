@@ -2,6 +2,10 @@
 # encoding:utf-8
 # coding:utf-8
 
+"""
+Module to handle printer interaction
+"""
+
 import logging
 import subprocess
 

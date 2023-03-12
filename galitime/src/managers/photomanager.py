@@ -2,7 +2,8 @@
 # encoding:utf-8
 # coding:utf-8
 
-""" Screen window, contains screen class and control options
+"""
+Screen window, contains screen class and control options
 """
 
 import logging

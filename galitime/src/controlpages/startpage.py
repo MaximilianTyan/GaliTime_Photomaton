@@ -2,14 +2,16 @@
 # encoding:utf-8
 # coding:utf-8
 
+print(__name__)
+
 import logging
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtWidgets import QLabel, QPushButton
 from PyQt5.QtCore import Qt
 
-import stylesheet
-from managers.eventmanager import EventManager
+from .. import stylesheet
+from ..managers.eventmanager import EventManager
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

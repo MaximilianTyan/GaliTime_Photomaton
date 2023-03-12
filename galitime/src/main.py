@@ -11,18 +11,18 @@ import logging
 
 from PyQt5.QtWidgets import QApplication
 
-from controlwindow import ControlWindow
-from screenwindow import ScreenWindow
-from camera import CameraWrapper
-from printer import ImagePrinter
+from .controlwindow import ControlWindow
+from .screenwindow import ScreenWindow
+from .camera import CameraWrapper
+from .printer import ImagePrinter
 
 # Format setup ----------------------------------
 
-from constants import ENCODING, LOGGERFORMAT
+from .constants import ENCODING, LOGGERFORMAT
 
 logging.basicConfig(format=LOGGERFORMAT, level=0)
 
-handler = logging.FileHandler("logs/galitime.log", "wt", encoding=ENCODING)
+handler = logging.FileHandler("galitime/logs/galitime.log", "wt", encoding=ENCODING)
 formatter = logging.Formatter(LOGGERFORMAT)
 handler.setFormatter(formatter)
 

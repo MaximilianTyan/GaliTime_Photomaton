@@ -2,7 +2,8 @@
 # encoding:utf-8
 # coding:utf-8
 
-""" Screen window, contains screen class and control options
+"""
+Screen window, contains screen class and control options
 """
 
 import logging
@@ -14,9 +15,9 @@ from PyQt5.QtGui import QPixmap, QPainter
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtCore import Qt, QTimer
 
-from camera import CameraWrapper
+from .camera import CameraWrapper
 
-from constants import FPS, RESTART_INTERVAL
+from .constants import FPS, RESTART_INTERVAL
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

@@ -1,3 +1,11 @@
+#!/bin/env python3
+# coding:utf-8
+# encoding:utf-8
+
+"""
+Module defining custom stylesheets
+"""
+
 BigBlueButton = """
     background-color: rgb(50, 50, 200); 
     font-size: 20px; 

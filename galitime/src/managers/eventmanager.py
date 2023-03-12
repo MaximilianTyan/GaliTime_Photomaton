@@ -16,10 +16,10 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import QDate
 
-from managers.emailmanager import EmailManager
+from ..managers.emailmanager import EmailManager
 
-from constants import DATEFORMAT, ENCODING
-from constants import SAVEFILE
+from ..constants import DATEFORMAT, ENCODING
+from ..constants import SAVEFILE
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

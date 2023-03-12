@@ -2,20 +2,24 @@
 # encoding:utf-8
 # coding:utf-8
 
+"""
+Module to handle the control page
+"""
+
 import logging
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QLabel, QPushButton
 from PyQt5.QtCore import Qt, QTimer
 
-import stylesheet
-from managers.eventmanager import EventManager
-from managers.emailmanager import EmailManager
-from managers.photomanager import PhotoManager
+from .. import stylesheet
+from ..managers.eventmanager import EventManager
+from ..managers.emailmanager import EmailManager
+from ..managers.photomanager import PhotoManager
 
-from screenwindow import ScreenWindow
-from camera import CameraWrapper
-from printer import ImagePrinter
+from ..screenwindow import ScreenWindow
+from ..camera import CameraWrapper
+from ..printer import ImagePrinter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

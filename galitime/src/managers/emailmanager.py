@@ -2,7 +2,8 @@
 # coding:utf-8
 # encoding:utf-8
 
-""" Module for email handling
+"""
+Module for email handling
 """
 
 import os
@@ -12,7 +13,7 @@ import shutil
 
 from PyQt5.QtWidgets import QInputDialog
 
-from constants import ENCODING, INFOFILE
+from ..constants import ENCODING, INFOFILE
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

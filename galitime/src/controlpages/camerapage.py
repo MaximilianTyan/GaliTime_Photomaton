@@ -2,14 +2,18 @@
 # encoding:utf-8
 # coding:utf-8
 
+"""
+Module managing the camera options page
+"""
+
 import logging
 import inspect
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QPushButton, QComboBox, QTextEdit
 
-import stylesheet
-from camera import CameraWrapper
+from .. import stylesheet
+from ..camera import CameraWrapper
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
