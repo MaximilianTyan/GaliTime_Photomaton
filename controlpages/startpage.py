@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QLabel, QPushButton
 from PyQt5.QtCore import Qt
 
 import stylesheet
-from eventmanager import EventManager
+from managers.eventmanager import EventManager
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

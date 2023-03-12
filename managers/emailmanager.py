@@ -12,12 +12,10 @@ import shutil
 
 from PyQt5.QtWidgets import QInputDialog
 
-from constants import ENCODING
+from constants import ENCODING, INFOFILE
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-INFOFILE = "email.json"
 
 
 class EmailManager:

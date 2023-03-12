@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QAbstractSpinBox
 
 from PyQt5.QtCore import Qt, QDate
 
-from eventmanager import EventManager
+from managers.eventmanager import EventManager
 from screenwindow import ScreenWindow
 
 import stylesheet

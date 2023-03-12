@@ -14,8 +14,11 @@ from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtCore import Qt
 
 from screenwindow import ScreenWindow
-from controlPages import startpage, optionspage, controlpage, camerapage
-from eventmanager import EventManager
+from controlpages.startpage import StartPage
+from controlpages.optionspage import OptionsPage
+from controlpages.controlpage import ControlPage
+from controlpages.camerapage import CameraPage
+from managers.eventmanager import EventManager
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -55,10 +58,10 @@ class ControlWindow(QMainWindow):
             page (str): page name
         """
         pagesDict = {
-            "start": startpage.StartPage,
-            "options": optionspage.OptionsPage,
-            "control": controlpage.ControlPage,
-            "camera": camerapage.CameraPage,
+            "start": StartPage,
+            "options": OptionsPage,
+            "control": ControlPage,
+            "camera": CameraPage
         }
         self.currentPage = object.__new__(pagesDict[page])
         self.currentPage.__init__(self)

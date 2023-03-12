@@ -9,8 +9,9 @@ from PyQt5.QtWidgets import QLabel, QPushButton
 from PyQt5.QtCore import Qt, QTimer
 
 import stylesheet
-from eventmanager import EventManager
-from emailmanager import EmailManager
+from managers.eventmanager import EventManager
+from managers.emailmanager import EmailManager
+from managers.photomanager import PhotoManager
 
 from screenwindow import ScreenWindow
 from camera import CameraWrapper
@@ -18,8 +19,6 @@ from printer import ImagePrinter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-TEMPFILE = "{}/current.jpeg"
 
 
 class ControlPage:
@@ -172,9 +171,9 @@ class ControlPage:
         rawPhoto = self.camera.takePhoto(parentFolder)
         self.screenWindow.displayImage(rawPhoto)
 
-        EventManager.incrementPhotoNumber()
+        PhotoManager.incrementPhotoNumber()
         self.currentPhotoFullFilePath = self.screenWindow.saveImage(
-            parentFolder + TEMPFILE
+            parentFolder + rawPhoto
         )
 
         return self.currentPhotoFullFilePath

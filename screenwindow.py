@@ -7,8 +7,7 @@
 
 import logging
 
-import os
-import atexit
+import os, atexit
 
 from PyQt5.QtWidgets import QMainWindow, QLabel
 from PyQt5.QtGui import QPixmap, QPainter
@@ -17,11 +16,10 @@ from PyQt5.QtCore import Qt, QTimer
 
 from camera import CameraWrapper
 
+from constants import FPS, RESTART_INTERVAL
+
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-FPS = 30
-RESTART_INTERVAL = 30
 
 
 class ScreenWindow(QMainWindow):
@@ -37,7 +35,7 @@ class ScreenWindow(QMainWindow):
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
 
         self.cam = CameraWrapper.getCamera()
-        self.decorFile = ""
+        self.decorFile = None
 
         self.text = ""
 
@@ -149,6 +147,22 @@ class ScreenWindow(QMainWindow):
         if not self.isPreviewing():
             self.updateScreen()
 
+    def exportImage(self, filepath: str) -> str:
+        """
+        saveImage : Saves the image currently displayed on screen (including decor and text) at the filepath.
+
+        Args:
+            filepath (str): Filepath with filename to save the image
+
+        Returns:
+            str: Filepath where the image was saved (should correpond to suppied filename)
+        """
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        self.screenImage.save(filepath)
+
+        return filepath
+
     def reset(self) -> None:
         """
         reset : Resets screen to default image and clears text.
@@ -217,22 +231,6 @@ class ScreenWindow(QMainWindow):
         logger.info("Restarting Preview")
         self.stopPreview()
         self.startPreview()
-
-    def saveImage(self, filepath: str) -> str:
-        """
-        saveImage : Saves the image currently displayed on screen (including decor and text) at the filepath.
-
-        Args:
-            filepath (str): Filepath with filename to save the image
-
-        Returns:
-            str: Filepath where the image was saved (should correpond to suppied filename)
-        """
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        self.screenImage.save(filepath)
-
-        return filepath
 
     def _cleanUp(self):
         if self.updateTimer.isActive():

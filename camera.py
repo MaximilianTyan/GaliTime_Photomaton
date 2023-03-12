@@ -17,15 +17,11 @@ import gphoto2 as gp
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QDateTime
 
-from constants import ENCODING
+from constants import ENCODING, MOVIEPATH
+from constants import STARTBYTES, STOPBYTES
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-MOVIEPATH = "movie.mjpg"
-
-STARTBYTES = b"\xFF\xD8\xFF"
-STOPBYTES = b"\xFF\xD9"
 
 
 def popError(func) -> callable:
