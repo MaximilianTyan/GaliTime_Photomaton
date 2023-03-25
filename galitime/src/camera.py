@@ -7,18 +7,21 @@ Module containing class handling camera IO and related functions
 """
 
 import os
+import shutil
 import subprocess
 import time
 import logging
 import atexit
-import psutil
+
+# import psutil
 
 import gphoto2 as gp
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QDateTime
 
-from .constants import ENCODING, MOVIEPATH
-from .constants import STARTBYTES, STOPBYTES
+from .constants import ENCODING, MOVIE_PATH
+from .constants import CAMERA_LOGFILE
+from .constants import START_BYTES, STOP_BYTES
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -59,7 +62,6 @@ class CameraWrapper:
     """
 
     def __init__(self) -> None:
-
         self.isPreviewing = False
         self.previewProcess = None
 
@@ -73,7 +75,11 @@ class CameraWrapper:
 
         self.cam = gp.Camera()
 
-        self.logfile = open("galitime/logs/camera.log", "wt", encoding=ENCODING)
+        self.logfile = open(CAMERA_LOGFILE, "wt", encoding=ENCODING)
+
+        if os.path.exists(MOVIE_PATH):
+            os.remove(MOVIE_PATH)
+        shutil.copy("galitime/ressources/mire.jpg", MOVIE_PATH)
 
         # Ensuring proper cleanup
         atexit.register(self._cleanUp)
@@ -94,10 +100,14 @@ class CameraWrapper:
         """
         _clearGphoto : Clear all processes origiating from gphoto2 that may lock the camera.
         """
+
+        subprocess.run(["pkill", "gphoto2"])
+
+        return
+
         clearedProcess = False
         pythonPID = os.getpid()
         for process in psutil.process_iter():
-
             if process.pid == pythonPID:
                 continue  # Don't kill current process
 
@@ -116,10 +126,10 @@ class CameraWrapper:
             logger.info("No process cleared")
 
     def _cleanMovieFile(self) -> None:
-        filesize = os.path.getsize(MOVIEPATH)
-        with open(MOVIEPATH, "wt", encoding=ENCODING) as file:
+        filesize = os.path.getsize(MOVIE_PATH)
+        with open(MOVIE_PATH, "wt", encoding=ENCODING) as file:
             file.write("")
-        logger.info("Cleared %s file (%u bytes)", MOVIEPATH, filesize)
+        logger.info("Cleared %s file (%u bytes)", MOVIE_PATH, filesize)
 
     @popError
     def connect(self) -> None:
@@ -171,7 +181,7 @@ class CameraWrapper:
         Returns:
             bytes: Last available jpeg frame
         """
-        filesize = os.path.getsize(MOVIEPATH)
+        filesize = os.path.getsize(MOVIE_PATH)
         if filesize == self.prevFileSize:
             return self.prevFrame
         self.prevFileSize = filesize
@@ -179,14 +189,14 @@ class CameraWrapper:
         self.frameCount += 1
 
         maxsize = 960 * 640 * 3  # Fully uncompressed image (theoretical maximum)
-        with open(MOVIEPATH, "br") as file:
+        with open(MOVIE_PATH, "br") as file:
             # Sets cursor 690*640*3 bytes before the end of the file if possible
             file.seek(filesize - maxsize if (filesize - maxsize) > 0 else 0)
             rawdata = file.read(maxsize if maxsize < filesize else filesize)
 
-        frame = rawdata[rawdata.rfind(STARTBYTES) :]
+        frame = rawdata[rawdata.rfind(START_BYTES) :]
 
-        if not frame.endswith(STOPBYTES):
+        if not frame.endswith(STOP_BYTES):
             return self.prevFrame
 
         self.prevFrame = frame
@@ -233,9 +243,18 @@ class CameraWrapper:
         self.logfile.close()
 
     def _cleanUp(self) -> None:
-        self.cam.exit()
-        self.stopPreview()
-        self._closeLog()
+        try:
+            self.cam.exit()
+        finally:
+            pass
+        try:
+            self.stopPreview()
+        finally:
+            pass
+        try:
+            self._closeLog()
+        finally:
+            pass
 
     @popError
     def getAbilities(self) -> tuple:

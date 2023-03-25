@@ -85,7 +85,7 @@ class ControlPage:
         # 4 Email button
         EmailButton = QPushButton("Envoyer par mail")
         EmailButton.clicked.connect(
-            lambda: EmailManager.addPhotoToMail(self.currentPhotoFullFilePath)
+            lambda: EmailManager.addPhotoToMailFolder(self.currentPhotoFullFilePath)
         )
         EmailButton.setStyleSheet(stylesheet.BigBlueButton)
         MainVLayout.addWidget(EmailButton)
@@ -168,16 +168,16 @@ class ControlPage:
         Returns:
             str: Full photo file path with name
         """
-        parentFolder = EventManager.getEventFolder()
+        photoFolder = PhotoManager().getPhotoFolder()
 
         self.screenWindow.stopPreview()
 
-        rawPhoto = self.camera.takePhoto(parentFolder)
+        rawPhoto = self.camera.takePhoto(photoFolder)
         self.screenWindow.displayImage(rawPhoto)
 
         PhotoManager.incrementPhotoNumber()
-        self.currentPhotoFullFilePath = self.screenWindow.saveImage(
-            parentFolder + rawPhoto
+        self.currentPhotoFullFilePath = self.screenWindow.exportImage(
+            photoFolder + rawPhoto
         )
 
         return self.currentPhotoFullFilePath

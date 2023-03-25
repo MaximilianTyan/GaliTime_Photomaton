@@ -13,12 +13,12 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtCore import Qt
 
-from screenwindow import ScreenWindow
-from controlpages.startpage import StartPage
-from controlpages.optionspage import OptionsPage
-from controlpages.controlpage import ControlPage
-from controlpages.camerapage import CameraPage
-from managers.eventmanager import EventManager
+from .screenwindow import ScreenWindow
+from .controlpages.startpage import StartPage
+from .controlpages.optionspage import OptionsPage
+from .controlpages.controlpage import ControlPage
+from .controlpages.camerapage import CameraPage
+from .managers.eventmanager import EventManager
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -50,7 +50,7 @@ class ControlWindow(QMainWindow):
         """
         return cls
 
-    def loadPage(self, page: str) -> None:
+    def loadPage(self, page: str, *args, **kwargs) -> None:
         """
         loadPage : Loads and displays the requested page
 
@@ -61,10 +61,10 @@ class ControlWindow(QMainWindow):
             "start": StartPage,
             "options": OptionsPage,
             "control": ControlPage,
-            "camera": CameraPage
+            "camera": CameraPage,
         }
         self.currentPage = object.__new__(pagesDict[page])
-        self.currentPage.__init__(self)
+        self.currentPage.__init__(self, *args, **kwargs)
         self.setCentralWidget(self.currentPage.load())
 
     def _shortcutSetup(self):

@@ -1,3 +1,3 @@
-import src.main
+from .src.main import main
 
-print(__name__)
+main()

@@ -19,7 +19,7 @@ from ..managers.eventmanager import EventManager
 from ..screenwindow import ScreenWindow
 
 from .. import stylesheet
-from ..constants import DATEFORMAT
+from ..constants import DATE_FORMAT
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -30,7 +30,7 @@ class OptionsPage:
     StartPage : Handles option page functionnality
     """
 
-    def __init__(self, mainWindow):
+    def __init__(self, mainWindow, firstTime=False):
         self.mainWindow = mainWindow
 
         self.tempEventInfo = {
@@ -49,6 +49,7 @@ class OptionsPage:
         self.screenWindow = ScreenWindow.getScreen()
 
         self.eventOpened = False
+        self.firstTimeOpen = firstTime
 
     def load(self):
         """
@@ -88,7 +89,7 @@ class OptionsPage:
 
         # 3.1 Date
         self.EventDateInput = QDateEdit(QDate.currentDate())
-        self.EventDateInput.setDisplayFormat(DATEFORMAT)
+        self.EventDateInput.setDisplayFormat(DATE_FORMAT)
         self.EventDateInput.setAlignment(Qt.AlignCenter)
         self.EventDateInput.setButtonSymbols(QAbstractSpinBox.NoButtons)
         OptionsGridLayout.addWidget(self.EventDateInput, 2, 1)
@@ -101,7 +102,7 @@ class OptionsPage:
 
         # 4.1 saveFolderPath label
         self.saveFolderPathLabel = QLabel(
-            "Dossier d'enregistrement:\n" + EventManager.getEventFolder()
+            "Dossier d'enregistrement:\n" + str(EventManager.getEventFolder())
         )
         self.saveFolderPathLabel.setAlignment(Qt.AlignCenter)
         self.saveFolderPathLabel.setWordWrap(True)
@@ -115,7 +116,7 @@ class OptionsPage:
 
         # 5.1 Decorfile label
         self.DecorFileLabel = QLabel(
-            "Image de Décoration:\n" + self.screenWindow.getDecorFile()
+            "Image de Décoration:\n" + str(self.screenWindow.getDecorFile())
         )
         self.DecorFileLabel.setAlignment(Qt.AlignCenter)
         self.saveFolderPathLabel.setWordWrap(True)
@@ -151,6 +152,12 @@ class OptionsPage:
 
         TitleLabel.setFocus()
 
+        if not self.firstTimeOpen:
+            self.changeEventName()
+            self.changeEventDate()
+            self.validateParentFolder(EventManager.getEventFolder())
+            self.validateDecorFile(ScreenWindow.getScreen().getDecorFile())
+
         logger.debug("Options page loaded")
         return MainContainer
 
@@ -162,11 +169,8 @@ class OptionsPage:
         parentFolderPath = QFileDialog.getExistingDirectory(
             self.mainWindow, caption="Dossier d'enregistrement"
         )
-
         saveFolderPath = parentFolderPath + "/" + self.tempEventInfo["eventName"] + "/"
-
-        self.tempEventInfo["saveFolder"] = saveFolderPath
-        self.saveFolderPathLabel.setText("Dossier d'enregistrement:\n" + saveFolderPath)
+        self.validateParentFolder(saveFolderPath)
 
     def chooseDecorFileButtonCall(self) -> None:
         """
@@ -176,9 +180,15 @@ class OptionsPage:
         selectedFilename = QFileDialog.getOpenFileName(
             self.mainWindow, caption="Image de décor"
         )[0]
+        self.validateDecorFile(selectedFilename)
 
-        self.tempEventInfo["decorFile"] = selectedFilename
-        self.DecorFileLabel.setText("Image de décor:\n" + selectedFilename)
+    def validateParentFolder(self, saveFolderPath: str) -> None:
+        self.tempEventInfo["saveFolder"] = saveFolderPath
+        self.saveFolderPathLabel.setText("Dossier d'enregistrement:\n" + saveFolderPath)
+
+    def validateDecorFile(self, decorFilePath: str) -> None:
+        self.tempEventInfo["decorFile"] = decorFilePath
+        self.DecorFileLabel.setText("Image de décor:\n" + decorFilePath)
 
     def changeEventName(self) -> None:
         """
@@ -199,7 +209,7 @@ class OptionsPage:
         """
         date = self.EventDateInput.date()
         if date.isValid():
-            self.tempEventInfo["eventDate"] = date.toString(DATEFORMAT)
+            self.tempEventInfo["eventDate"] = date.toString(DATE_FORMAT)
 
             self.EventDateInput.setStyleSheet("background-color: rgb(100, 200, 100)")
         else:
@@ -229,7 +239,8 @@ class OptionsPage:
         EventManager.setEventFolder(self.tempEventInfo["saveFolder"])
         self.screenWindow.setDecorFile(self.tempEventInfo["decorFile"])
 
-        EventManager.initSaveFolder(EventManager.getEventFolder())
+        if self.firstTimeOpen:
+            EventManager.initSaveFolder(EventManager.getEventFolder())
 
         if not self.eventOpened:
             self.screenWindow.startPreview()

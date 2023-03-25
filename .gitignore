@@ -4,10 +4,14 @@
 
 # Image files
 test-folder/
+test*
 *.mjpg
 
 # Log file
 *.log
+
+#Email config files
+*.key
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

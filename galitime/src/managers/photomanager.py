@@ -6,6 +6,8 @@
 Screen window, contains screen class and control options
 """
 
+import os
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,29 @@ class PhotoManager:
 
     decorFile = None
     photoNumber = 0
+    photoFolder = ""
+
+    @classmethod
+    def getPhotoFolder(cls) -> str:
+        """
+        getPhotoFolder : Returns the raw photo folder path
+
+        Returns:
+            str: Raw photo folder
+        """
+        return cls.photoFolder
+
+    @classmethod
+    def setPhotoFolder(cls, photoFolder: str) -> None:
+        """
+        getPhotoFolder : Sets the raw photo folder path
+
+        Args:
+            photoFolder (str): Raw photo folder
+        """
+        if not photoFolder.endswith("/"):
+            photoFolder += "/"
+        cls.photoFolder = photoFolder
 
     @classmethod
     def incrementPhotoNumber(cls, increment: int = 1):

@@ -17,9 +17,11 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import QDate
 
 from ..managers.emailmanager import EmailManager
+from ..managers.photomanager import PhotoManager
 
-from ..constants import DATEFORMAT, ENCODING
-from ..constants import SAVEFILE
+
+from ..constants import DATE_FORMAT, ENCODING
+from ..constants import SAVE_FILE
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -125,16 +127,18 @@ class EventManager:
         os.mkdir(saveFolder + "raw_photos")
         os.mkdir(saveFolder + "emails")
 
+        EmailManager.setEmailFolder(saveFolder + "emails")
+        PhotoManager.setPhotoFolder(saveFolder + "raw_photos")
+
     @classmethod
     def updateInfoFile(cls) -> None:
         """
         writeInfoFile : Write event info to the save file
         """
         infoDict = {
-            "eventName": cls.eventName,
-            "eventDate": cls.eventDate,
-            "saveFolder": cls.saveFolder,
-            "photoNumber": cls.photoNumber,
+            "eventName": cls.getEventName(),
+            "eventDate": cls.getEventDate(),
+            "photoNumber": PhotoManager.getPhotoNumber(),
             "emailNumber": EmailManager.getEmailNumber(),
         }
         cls._writeInfoFile(infoDict)
@@ -142,12 +146,12 @@ class EventManager:
     @classmethod
     def _writeInfoFile(cls, infodict: dict) -> None:
         """
-        _writeInfoFile : Write supplied dictionnary to info file in it's json representation.
+        _writeInfoFile: Write supplied dictionnary to info file in it's json representation.
 
         Args:
             infodict (dict): event info dict to write.
         """
-        with open(cls.saveFolder + SAVEFILE, "wt", encoding=ENCODING) as file:
+        with open(cls.saveFolder + SAVE_FILE, "wt", encoding=ENCODING) as file:
             json.dump(infodict, file, indent=4)
 
     @classmethod
@@ -158,7 +162,7 @@ class EventManager:
         Returns:
             dict: json content of info file
         """
-        with open(cls.saveFolder + SAVEFILE, "rt", encoding=ENCODING) as file:
+        with open(cls.saveFolder + SAVE_FILE, "rt", encoding=ENCODING) as file:
             return json.load(file)
 
     @classmethod
@@ -194,7 +198,7 @@ class EventManager:
         cls.updateInfoFile()
 
     @classmethod
-    def loadSaveFolder(cls, folder: str = None) -> None:
+    def loadSaveFolder(cls, folder: str = None) -> bool:
         """
         loadSaveFolder : Loads event information from the folder supplied via "folder" argument.
         If None is supplied, user will be prompt with a file dialog to choose it.
@@ -202,6 +206,9 @@ class EventManager:
         Args:
             folder (str, optional): File path to the event folder that should be loaded.
                                     Defaults to None.
+
+        Returns:
+            bool: True if the folder was successfully loaded, False instead.
         """
         if folder is None or not isinstance(folder, str):
             folder = QFileDialog.getExistingDirectory(
@@ -209,44 +216,27 @@ class EventManager:
             )
 
         if len(folder) == 0:
-            return
+            QMessageBox.critical(
+                cls.parent, "Invalid folder path", "Folder path should not be empty"
+            )
+            return False
         folder += "/"
 
         logger.debug("Loading folder %s", folder)
 
-        if not os.path.exists(folder + "info.json"):
+        if not os.path.exists(folder + SAVE_FILE):
             QMessageBox.critical(
                 cls.parent,
                 "Loading error",
-                f"No info.json file found in\n{folder}\n Aborting load operation\n\nInvalid folder",
+                f"No {SAVE_FILE} file found in\n{folder}\n Aborting load operation\n\nInvalid folder",
             )
-            return
+            return False
+        cls.saveFolder = folder
 
-        with open(folder + "info.json", "rt", encoding=ENCODING) as file:
+        with open(folder + SAVE_FILE, "rt", encoding=ENCODING) as file:
             infoDict = json.load(file)
 
-        # File structure checking
-        cls.saveFolder = infoDict.get("saveFolder", None)
-        if cls.saveFolder is None:
-            QMessageBox.critical(
-                cls.parent,
-                "Loading error",
-                """No save folder was supplied in info.json
-                Aborting load operation\n
-                No save folder supplied""",
-            )
-            return
-
-        if not os.path.exists(cls.saveFolder):
-            QMessageBox.critical(
-                cls.parent,
-                "Loading error",
-                """Save folder supplied in info.json does not exist
-                Aborting load operation\n
-                Save folder does not exist""",
-            )
-            return
-
+        # File structure check
         if not os.path.exists(cls.saveFolder + "raw_photos"):
             QMessageBox.warning(
                 cls.parent,
@@ -254,7 +244,7 @@ class EventManager:
                 f"No raw_photos in \n{folder}\n Creating an empty one\n\nraw_photos folder missing",
             )
             os.mkdir(cls.saveFolder + "raw_photos")
-        cls.photoFolder = cls.saveFolder + "raw_photos/"
+        PhotoManager.photoFolder = cls.saveFolder + "raw_photos/"
 
         if not os.path.exists(cls.saveFolder + "emails"):
             QMessageBox.warning(
@@ -268,25 +258,31 @@ class EventManager:
         EmailManager.setEmailFolder(cls.saveFolder + "emails/")
 
         # Content checking
-        requiredKeys = {
-            "eventName": "Event (DEFAULT NAME)",
-            "eventDate": QDate.currentDate().toString(DATEFORMAT),
-            "saveFolder": cls.saveFolder,
-            "photoNumber": len(os.listdir(cls.photoFolder)),
-        }
 
-        for attr, attrValue in requiredKeys.items():
-            if attr not in infoDict.keys():
-                QMessageBox.critical(
-                    cls.parent,
-                    "Invalid info file",
-                    f'Property "{attr}" missing from info file, \
+        defaultValue = "EVENT (default name)"
+        if "eventName" not in infoDict.keys():
+            QMessageBox.critical(
+                cls.parent,
+                "Invalid info file",
+                f'Property "eventName" missing from info file, \
                     returning to default value: {attrValue}',
-                )
-                object.__setattr__(cls, attr, attrValue)
-            else:
-                object.__setattr__(cls, attr, infoDict[attr])
+            )
+            infoDict["eventName"] = defaultValue
+        cls.setEventName(infoDict["eventName"])
+
+        defaultValue = QDate.currentDate().toString(DATE_FORMAT)
+        if "eventDate" not in infoDict.keys():
+            QMessageBox.critical(
+                cls.parent,
+                "Invalid info file",
+                f'Property "eventDate" missing from info file, \
+                    returning to default value: {defaultValue}',
+            )
+            infoDict["eventDate"] = defaultValue
+        cls.setEventDate(infoDict["eventDate"])
 
         logger.debug("Loaded folder successfully")
 
         cls.updateInfoFile()
+
+        return True

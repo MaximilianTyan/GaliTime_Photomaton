@@ -54,14 +54,21 @@ class StartPage:
         # 3. New event
         NewEventButton = QPushButton("Nouvel événement")
         NewEventButton.setStyleSheet(stylesheet.BigBlueButton)
-        NewEventButton.clicked.connect(lambda: self.mainWindow.loadPage("options"))
+        NewEventButton.clicked.connect(self.createEvent)
         MainVLayout.addWidget(NewEventButton)
 
         # 4. Load event
         LoadEventButton = QPushButton("Charger un événement")
         LoadEventButton.setStyleSheet(stylesheet.BigBlueButton)
-        LoadEventButton.clicked.connect(EventManager.loadSaveFolder)
+        LoadEventButton.clicked.connect(self.openEvent)
         MainVLayout.addWidget(LoadEventButton)
 
         logger.debug("Start page loaded")
         return MainContainer
+
+    def openEvent(self):
+        if EventManager.loadSaveFolder():
+            self.mainWindow.loadPage("options")
+
+    def createEvent(self):
+        self.mainWindow.loadPage("options", firstTime=True)

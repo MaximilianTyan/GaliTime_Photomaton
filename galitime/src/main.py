@@ -7,7 +7,6 @@ Main module, creates and links objects and launche windows, apps
 """
 
 import sys
-import logging
 
 from PyQt5.QtWidgets import QApplication
 
@@ -16,33 +15,33 @@ from .screenwindow import ScreenWindow
 from .camera import CameraWrapper
 from .printer import ImagePrinter
 
-# Format setup ----------------------------------
+from . import logger
 
-from .constants import ENCODING, LOGGERFORMAT
 
-logging.basicConfig(format=LOGGERFORMAT, level=0)
+def main():
+    """
+    Main function launchgin the photomaton app
+    """
+    # Main app creation ------------------------------
 
-handler = logging.FileHandler("galitime/logs/galitime.log", "wt", encoding=ENCODING)
-formatter = logging.Formatter(LOGGERFORMAT)
-handler.setFormatter(formatter)
+    logger.setup()
 
-rootlogger = logging.getLogger()
-rootlogger.addHandler(handler)
+    app = QApplication(sys.argv)
 
-# Main app creation ------------------------------
+    cam = CameraWrapper()
+    printer = ImagePrinter()
+    screen = ScreenWindow()
+    main = ControlWindow()
 
-app = QApplication(sys.argv)
+    # App execution -----------------------------------
 
-cam = CameraWrapper()
-printer = ImagePrinter()
-screen = ScreenWindow()
-main = ControlWindow()
+    main.show()
+    screen.show()
 
-# App execution -----------------------------------
+    cam.connect()
 
-main.show()
-screen.show()
+    sys.exit(app.exec())
 
-cam.connect()
 
-sys.exit(app.exec())
+if __name__ == "__main__":
+    main()

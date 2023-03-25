@@ -36,11 +36,11 @@ class ScreenWindow(QMainWindow):
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
 
         self.cam = CameraWrapper.getCamera()
-        self.decorFile = None
+        self.decorFile = ""
 
         self.text = ""
 
-        self.defaultImage = QPixmap("ressources/default_cam_view.png")
+        self.defaultImage = QPixmap("galitime/ressources/default_cam_view.png")
         self.decorImage = QPixmap(self.decorFile)
         self.screenImage = QPixmap()
 
@@ -234,7 +234,13 @@ class ScreenWindow(QMainWindow):
         self.startPreview()
 
     def _cleanUp(self):
-        if self.updateTimer.isActive():
-            self.updateTimer.stop()
-        if self.restartTimer.isActive():
-            self.updateTimer.stop()
+        try:
+            if self.updateTimer.isActive():
+                self.updateTimer.stop()
+        finally:
+            pass
+        try:
+            if self.restartTimer.isActive():
+                self.updateTimer.stop()
+        finally:
+            pass
