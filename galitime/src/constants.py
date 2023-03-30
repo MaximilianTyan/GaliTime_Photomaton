@@ -26,3 +26,6 @@ SAVE_FILE = "event.json"
 
 # Emails manager
 INFO_FILE = "email.json"
+
+# Printer settings
+PRINTER = "DP-QW410"

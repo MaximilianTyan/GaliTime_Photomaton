@@ -145,8 +145,8 @@ class ScreenWindow(QMainWindow):
             imagepath (str): Path to the image (absolute or relative)
         """
         self.screenImage.load(imagepath)
-        if not self.isPreviewing():
-            self.updateScreen()
+        #if not self.isPreviewing():
+        self.updateScreen()
 
     def exportImage(self, filepath: str) -> str:
         """
@@ -180,7 +180,7 @@ class ScreenWindow(QMainWindow):
         self.reset()
 
         # Launching capture command
-        logger.info("Preview started with %(FPS)u fps")
+        logger.info("Preview started with %u fps" % FPS)
         self.cam.startPreview()
 
         self.updateTimer.start(round(1000 / FPS))
@@ -210,6 +210,11 @@ class ScreenWindow(QMainWindow):
         width, height = self.screenImage.width(), self.screenImage.height()
 
         painter.drawPixmap(0, 0, width, height, self.decorImage)
+
+        currentPen = painter.pen()
+        currentPen.setColor(Qt.white)
+        painter.setPen(currentPen)
+
         painter.drawText(0, 0, width, height, Qt.AlignCenter, str(self.text))
 
         self.Screen.setPixmap(self.screenImage)

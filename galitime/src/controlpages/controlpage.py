@@ -92,7 +92,7 @@ class ControlPage:
 
         # 5 Print button
         PrintButton = QPushButton("Imprimer la photo")
-        EmailButton.clicked.connect(self.printImage)
+        PrintButton.clicked.connect(self.printImage)
         PrintButton.setStyleSheet(stylesheet.BigBlueButton)
         MainVLayout.addWidget(PrintButton)
 
@@ -172,12 +172,12 @@ class ControlPage:
 
         self.screenWindow.stopPreview()
 
-        rawPhoto = self.camera.takePhoto(photoFolder)
-        self.screenWindow.displayImage(rawPhoto)
+        rawPhotoFullFilepath = self.camera.takePhoto(photoFolder)
+        self.screenWindow.displayImage(rawPhotoFullFilepath)
 
         PhotoManager.incrementPhotoNumber()
         self.currentPhotoFullFilePath = self.screenWindow.exportImage(
-            photoFolder + rawPhoto
+            rawPhotoFullFilepath
         )
 
         return self.currentPhotoFullFilePath
@@ -186,4 +186,5 @@ class ControlPage:
         """
         printImage : Prints the current photo
         """
+        logger.info("Printing file %s" % self.currentPhotoFullFilePath)
         self.printer.printImage(self.currentPhotoFullFilePath)

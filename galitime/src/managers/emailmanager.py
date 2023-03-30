@@ -161,7 +161,7 @@ class EmailManager:
         cls.sendViaMail(mailList, photoPath)
 
     @classmethod
-    def sendViaMail(cls, emailAddressList: list(str), imagePath:str):
+    def sendViaMail(cls, emailAddressList: list[str], imagePath:str):
         """
         sendViaMail : Sends the image file to the list of emails givent using SMTP and a webserver
         configured in the email.cfg file.

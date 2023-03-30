@@ -105,25 +105,25 @@ class CameraWrapper:
 
         return
 
-        clearedProcess = False
-        pythonPID = os.getpid()
-        for process in psutil.process_iter():
-            if process.pid == pythonPID:
-                continue  # Don't kill current process
+        # clearedProcess = False
+        # pythonPID = os.getpid()
+        # for process in psutil.process_iter():
+        #     if process.pid == pythonPID:
+        #         continue  # Don't kill current process
 
-            if "psutil" in process.name():
-                continue  # Don't kill the generator
+        #     if "psutil" in process.name():
+        #         continue  # Don't kill the generator
 
-            if "gphoto2" in process.name():
-                logger.info("Killing %s", process)
-                try:
-                    process.kill()
-                    clearedProcess = True
-                except psutil.AccessDenied:
-                    logger.warning("Failed to kill %s", process)
+        #     if "gphoto2" in process.name():
+        #         logger.info("Killing %s", process)
+        #         try:
+        #             process.kill()
+        #             clearedProcess = True
+        #         except psutil.AccessDenied:
+        #             logger.warning("Failed to kill %s", process)
 
-        if not clearedProcess:
-            logger.info("No process cleared")
+        # if not clearedProcess:
+        #     logger.info("No process cleared")
 
     def _cleanMovieFile(self) -> None:
         filesize = os.path.getsize(MOVIE_PATH)
@@ -159,7 +159,7 @@ class CameraWrapper:
             "dd:MM:yyyy_hh'h'MM'm'ss's'zzz"
 
         Returns:
-            str: photo filepath
+            str: full photo filepath
         """
         photoPath = self.cam.capture(gp.GP_CAPTURE_IMAGE)
         photoFile = self.cam.file_get(
@@ -213,12 +213,15 @@ class CameraWrapper:
         self.cam.exit()
         self.isPreviewing = True
 
+        self.frameCount = 0
+
         self._cleanMovieFile()
 
         self.previewProcess = subprocess.Popen(
             ["gphoto2", "--capture-movie", "--force-overwrite"],
             stderr=subprocess.STDOUT,
             stdout=self.logfile,
+            cwd=os.path.dirname(MOVIE_PATH)
         )
         # , "--stdout", "|",
         # "ffmpeg", "-i", "-", "-f", "mjpeg", "out.avi", "-y"])
@@ -237,7 +240,7 @@ class CameraWrapper:
         logger.info("POPEN Liveview capture stopped")
 
         fps = round(self.frameCount / (time.time_ns() - self.previewStartTime), 3)
-        logger.info("Mean FPS since last clip: %f", fps)
+        logger.info("Mean FPS since last clip: %s", str(fps))
 
     def _closeLog(self) -> None:
         self.logfile.close()
@@ -247,10 +250,17 @@ class CameraWrapper:
             self.cam.exit()
         finally:
             pass
+
         try:
             self.stopPreview()
         finally:
             pass
+        
+        try:
+            self._clearGphoto()
+        finally:
+            pass
+
         try:
             self._closeLog()
         finally:

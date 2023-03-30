@@ -30,7 +30,7 @@ class OptionsPage:
     StartPage : Handles option page functionnality
     """
 
-    def __init__(self, mainWindow, firstTime=False):
+    def __init__(self, mainWindow, createEvent=False):
         self.mainWindow = mainWindow
 
         self.tempEventInfo = {
@@ -49,7 +49,7 @@ class OptionsPage:
         self.screenWindow = ScreenWindow.getScreen()
 
         self.eventOpened = False
-        self.firstTimeOpen = firstTime
+        self.createEvent = createEvent
 
     def load(self):
         """
@@ -152,12 +152,14 @@ class OptionsPage:
 
         TitleLabel.setFocus()
 
-        if not self.firstTimeOpen:
+        if not self.createEvent:
+            # Display data loaded from save file
             self.changeEventName()
             self.changeEventDate()
             self.validateParentFolder(EventManager.getEventFolder())
             self.validateDecorFile(ScreenWindow.getScreen().getDecorFile())
 
+        
         logger.debug("Options page loaded")
         return MainContainer
 
@@ -239,7 +241,7 @@ class OptionsPage:
         EventManager.setEventFolder(self.tempEventInfo["saveFolder"])
         self.screenWindow.setDecorFile(self.tempEventInfo["decorFile"])
 
-        if self.firstTimeOpen:
+        if self.createEvent:
             EventManager.initSaveFolder(EventManager.getEventFolder())
 
         if not self.eventOpened:

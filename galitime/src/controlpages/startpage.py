@@ -71,4 +71,4 @@ class StartPage:
             self.mainWindow.loadPage("options")
 
     def createEvent(self):
-        self.mainWindow.loadPage("options", firstTime=True)
+        self.mainWindow.loadPage("options", createEvent=True)

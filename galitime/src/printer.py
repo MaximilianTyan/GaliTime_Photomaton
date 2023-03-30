@@ -9,7 +9,7 @@ Module to handle printer interaction
 import logging
 import subprocess
 
-from constants import PRINTER
+from .constants import PRINTER
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -36,5 +36,5 @@ class ImagePrinter:
         return cls.PrinterInstance
 
     def printImage(self, filepath):
-        result = subprocess.run(["lpr", filepath, "-P", PRINTER], check=True)
+        result = subprocess.run(["lpr", "-P", PRINTER, "-o", "media=w288h432", "-o", "StpiShrinkOutput=Expand", filepath], check=True)
         logger.info("Return code for print command %u", result)
