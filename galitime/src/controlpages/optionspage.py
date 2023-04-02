@@ -18,7 +18,7 @@ from PyQt5.QtCore import Qt, QDate
 from ..managers.eventmanager import EventManager
 from ..screenwindow import ScreenWindow
 
-from .. import stylesheet
+from ..stylesheet import cssify
 from ..constants import DATE_FORMAT
 
 logger = logging.getLogger(__name__)
@@ -60,9 +60,10 @@ class OptionsPage:
         """
         logger.debug("Loading options page")
         # Main layout, vertical, contains Title, Button Layout
-        MainContainer = QWidget(self.mainWindow)
+        MainContainer = QWidget(self.mainWindow)        
         MainVLayout = QVBoxLayout()
         MainVLayout.setAlignment(Qt.AlignVCenter)
+
         MainContainer.setLayout(MainVLayout)
 
         # 1. Label "GaliTime Options"
@@ -84,7 +85,7 @@ class OptionsPage:
         # 2.2 Validate Button
         ValidateNameButton = QPushButton("Valider")
         ValidateNameButton.clicked.connect(self.changeEventName)
-        ValidateNameButton.setStyleSheet(stylesheet.BigFlatButton)
+        #ValidateNameButton.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(ValidateNameButton, 1, 2)
 
         # 3.1 Date
@@ -97,7 +98,7 @@ class OptionsPage:
         # 3.2 Date
         ValidateDateButton = QPushButton("Valider")
         ValidateDateButton.clicked.connect(self.changeEventDate)
-        ValidateDateButton.setStyleSheet(stylesheet.BigFlatButton)
+        #ValidateDateButton.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(ValidateDateButton, 2, 2)
 
         # 4.1 saveFolderPath label
@@ -111,7 +112,7 @@ class OptionsPage:
         # 4.2 Browe button
         BrowseButton = QPushButton("Parcourir")
         BrowseButton.clicked.connect(self.chooseSaveFolderButtonCall)
-        BrowseButton.setStyleSheet(stylesheet.BigFlatButton)
+        #BrowseButton.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(BrowseButton, 3, 2)
 
         # 5.1 Decorfile label
@@ -125,13 +126,13 @@ class OptionsPage:
         # 5.2 Browe button
         BrowseButton2 = QPushButton("Choisir")
         BrowseButton2.clicked.connect(self.chooseDecorFileButtonCall)
-        BrowseButton2.setStyleSheet(stylesheet.BigFlatButton)
+        #BrowseButton2.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(BrowseButton2, 4, 2)
 
         # 6 Error Label
         self.errorLabel = QLabel()
         self.errorLabel.setAlignment(Qt.AlignCenter)
-        self.errorLabel.setStyleSheet("color: rgb(200,50,50)")
+        self.errorLabel.setStyleSheet("color: rgb(200, 50, 50);")
         MainVLayout.addWidget(self.errorLabel)
 
         # 7 Save & Cancel button
@@ -140,13 +141,13 @@ class OptionsPage:
 
         # 7.1 Save Button
         SaveButton = QPushButton("Enregistrer")
-        SaveButton.setStyleSheet(stylesheet.BigButton)
+        SaveButton.setStyleSheet(cssify("Big"))
         SaveButton.clicked.connect(self.controlPageCheck)
         ExitButtonsLayout.addWidget(SaveButton)
 
         # 7.1 Cancel Button
         CancelButton = QPushButton("Annuler")
-        CancelButton.setStyleSheet(stylesheet.BigRedButton)
+        CancelButton.setStyleSheet(cssify("Big Red"))
         CancelButton.clicked.connect(self.cancelOptions)
         ExitButtonsLayout.addWidget(CancelButton)
 
@@ -200,9 +201,9 @@ class OptionsPage:
         if self.EventInput.text().strip() != "":
             self.tempEventInfo["eventName"] = self.EventInput.text()
 
-            self.EventInput.setStyleSheet("background-color: rgb(100, 200, 100)")
+            self.EventInput.setStyleSheet(cssify("green"))
         else:
-            self.EventInput.setStyleSheet("background-color: rgb(200, 100, 100)")
+            self.EventInput.setStyleSheet(cssify("red"))
 
     def changeEventDate(self) -> None:
         """
@@ -213,9 +214,9 @@ class OptionsPage:
         if date.isValid():
             self.tempEventInfo["eventDate"] = date.toString(DATE_FORMAT)
 
-            self.EventDateInput.setStyleSheet("background-color: rgb(100, 200, 100)")
+            self.EventDateInput.setStyleSheet(cssify("green"))
         else:
-            self.EventDateInput.setStyleSheet("background-color: rgb(200, 100, 100)")
+            self.EventDateInput.setStyleSheet(cssify("red"))
 
     # Page switch
 

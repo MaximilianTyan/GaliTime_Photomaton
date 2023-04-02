@@ -21,7 +21,7 @@ from ..managers.photomanager import PhotoManager
 
 
 from ..constants import DATE_FORMAT, ENCODING
-from ..constants import SAVE_FILE
+from ..constants import EVENT_SAVE_FILE
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -151,7 +151,7 @@ class EventManager:
         Args:
             infodict (dict): event info dict to write.
         """
-        with open(cls.saveFolder + SAVE_FILE, "wt", encoding=ENCODING) as file:
+        with open(cls.saveFolder + EVENT_SAVE_FILE, "wt", encoding=ENCODING) as file:
             json.dump(infodict, file, indent=4)
 
     @classmethod
@@ -162,7 +162,7 @@ class EventManager:
         Returns:
             dict: json content of info file
         """
-        with open(cls.saveFolder + SAVE_FILE, "rt", encoding=ENCODING) as file:
+        with open(cls.saveFolder + EVENT_SAVE_FILE, "rt", encoding=ENCODING) as file:
             return json.load(file)
 
     @classmethod
@@ -224,16 +224,16 @@ class EventManager:
 
         logger.debug("Loading folder %s", folder)
 
-        if not os.path.exists(folder + SAVE_FILE):
+        if not os.path.exists(folder + EVENT_SAVE_FILE):
             QMessageBox.critical(
                 cls.parent,
                 "Loading error",
-                f"No {SAVE_FILE} file found in\n{folder}\n Aborting load operation\n\nInvalid folder",
+                f"No {EVENT_SAVE_FILE} file found in\n{folder}\n Aborting load operation\n\nInvalid folder",
             )
             return False
         cls.saveFolder = folder
 
-        with open(folder + SAVE_FILE, "rt", encoding=ENCODING) as file:
+        with open(folder + EVENT_SAVE_FILE, "rt", encoding=ENCODING) as file:
             infoDict = json.load(file)
 
         # File structure check

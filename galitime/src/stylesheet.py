@@ -6,34 +6,25 @@
 Module defining custom stylesheets
 """
 
-BigBlueButton = """
-    background-color: rgb(50, 50, 200); 
-    font-size: 20px; 
-    color: white;
-    width: 300px;
-    height: 50px;
-"""
+styles = {
+    "COMMON" : "",
 
-BigButton = """
-    font-size: 20px;
-    max-width: 300px;
-    height: 50px;
-"""
+    "BLUE" : "background-color: rgb(50, 50, 200); color: white;",
+    "RED" : "background-color: rgb(200, 100, 100);",
+    "GREEN" : "background-color: rgb(100, 200, 100);",
 
-BigFlatButton = """
-    max-width: 100px;
-"""
+    "DISABLED" : "background-color: rgb(200, 200, 200);",
 
-BigRedButton = """
-    background-color: rgb(200, 50, 50); 
-    font-size: 20px;
-    max-width: 300px;
-    height: 50px;
-"""
+    "TALL" : "height: 50px; font-size: 20px;",
+    "LARGE" : "width: 300px; font-size: 20px;",
+    "BIG": "height: 50px; width: 300px; font-size: 20px;"
+}
 
-BigDisabledButton = """
-    background-color: rgb(200, 200, 200); 
-    font-size: 20px;
-    max-width: 300px;
-    height: 50px;
-"""
+def cssify(rawStyleString:str) -> str:
+    resultCssString = styles["COMMON"]
+
+    for style, css in styles.items():
+        if style in rawStyleString.upper():
+            resultCssString += css
+    
+    return resultCssString

@@ -18,6 +18,7 @@ from PyQt5.QtCore import Qt, QTimer
 from .camera import CameraWrapper
 
 from .constants import FPS, RESTART_INTERVAL
+from .constants import DEFAULT_CAM_VIEW, DEFAULT_DECOR
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -36,11 +37,11 @@ class ScreenWindow(QMainWindow):
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
 
         self.cam = CameraWrapper.getCamera()
-        self.decorFile = ""
+        self.decorFile = DEFAULT_DECOR
 
         self.text = ""
 
-        self.defaultImage = QPixmap("galitime/ressources/default_cam_view.png")
+        self.defaultImage = QPixmap(DEFAULT_CAM_VIEW)
         self.decorImage = QPixmap(self.decorFile)
         self.screenImage = QPixmap()
 

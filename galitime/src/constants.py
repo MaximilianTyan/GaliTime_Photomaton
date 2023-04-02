@@ -15,18 +15,23 @@ LOGGER_FORMAT = "%(asctime)s [%(levelname)s] (%(module)s) %(lineno)d : %(message
 FPS = 30
 RESTART_INTERVAL = 30
 
+
 # Camera
 MOVIE_PATH = "galitime/ressources/movie.mjpg"
 CAMERA_LOGFILE = "galitime/logs/camera.log"
 START_BYTES = b"\xFF\xD8\xFF"
 STOP_BYTES = b"\xFF\xD9"
 
-# Event manager
-SAVE_FILE = "event.json"
-
-# Emails manager
-INFO_FILE = "email.json"
+# Files
+EVENT_SAVE_FILE = "event.json"
+EMAIL_INFO_FILE = "email.json"
+TEMP_PHOTO = "last_photo.jpg"
 
 # Printer settings
 PRINTER = "DP-QW410"
-PRINT_TIME = 100 # tenths of seconds
+PRINT_TIME = 10e3 # milliseconds
+
+# Defaults files
+DEFAULT_CAM_VIEW = "galitime/ressources/default_cam_view.png"
+DEFAULT_DECOR = "galitime/ressources/default_decor.png"
+DEFAULT_PHOTO = "galitime/ressources/mire.png"

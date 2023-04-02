@@ -13,47 +13,44 @@ import time
 import logging
 import atexit
 
-# import psutil
-
 import gphoto2 as gp
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QDateTime
 
 from .constants import ENCODING, MOVIE_PATH
-from .constants import CAMERA_LOGFILE
+from .constants import CAMERA_LOGFILE, DEFAULT_PHOTO
 from .constants import START_BYTES, STOP_BYTES
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-
-def popError(func) -> callable:
+def promptError(func) -> callable:
     """
-    popError : Decorator aimed at encapsulating a function call in a try/except
+    promptError : Decorator aimed at encapsulating a function call in a try/except
     structure and prompt any error into a popup. This aims at informing about
     camera error (the most common) without having to restart the whole application.
 
     Args:
-        func (callable): function to encapsulate
+        func (callable): function to be encapsulated
 
     Returns:
         callable: encapsulated function with error prompt handler
     """
 
-    def handled(*args, **kwargs):
+    def encapsulated(*args, **kwargs):
+        # Encapsulating function
         try:
-            retval = func(*args, **kwargs)
+            # The function to run
+            normalReturn = func(*args, **kwargs)
+            return normalReturn
         except Exception as err:
             logger.error("A camera error occured in function : %s : %s", func, err)
             QMessageBox.critical(
                 None, "Camera error", f"An error occured in function \n{func}:\n {err}"
             )
             return None
-        return retval
 
-    # ---
-    return handled
-
+    return encapsulated
 
 class CameraWrapper:
     """
@@ -62,6 +59,7 @@ class CameraWrapper:
     """
 
     def __init__(self) -> None:
+        self.connected = False
         self.isPreviewing = False
         self.previewProcess = None
 
@@ -70,21 +68,20 @@ class CameraWrapper:
         self.previewStartTime = 0
 
         self.frameCount = 0
+        self.logfile = open(CAMERA_LOGFILE, "wt", encoding=ENCODING)
 
         self._clearGphoto()
-
         self.cam = gp.Camera()
 
-        self.logfile = open(CAMERA_LOGFILE, "wt", encoding=ENCODING)
+        CameraWrapper.CameraInstance = self
 
         if os.path.exists(MOVIE_PATH):
             os.remove(MOVIE_PATH)
-        shutil.copy("galitime/ressources/mire.jpg", MOVIE_PATH)
+        with open(MOVIE_PATH, "wb") as file:
+            file.write(b"")
 
         # Ensuring proper cleanup
         atexit.register(self._cleanUp)
-
-        CameraWrapper.CameraInstance = self
 
     @classmethod
     def getCamera(cls) -> object:
@@ -102,8 +99,6 @@ class CameraWrapper:
         """
 
         subprocess.run(["pkill", "gphoto2"])
-
-        return
 
         # clearedProcess = False
         # pythonPID = os.getpid()
@@ -131,14 +126,19 @@ class CameraWrapper:
             file.write("")
         logger.info("Cleared %s file (%u bytes)", MOVIE_PATH, filesize)
 
-    @popError
+    def isConnected(self) -> bool:
+        return self.connected
+
+    @promptError
     def connect(self) -> None:
         """
         connect : Initiates connection to camera device
         """
+        self.connected = False
         self.cam.init()
+        self.connected = True
 
-    @popError
+    @promptError
     def listCams(self) -> tuple:
         """
         listCams : Get available cameras
@@ -148,7 +148,7 @@ class CameraWrapper:
         """
         return tuple(gp.Camera.autodetect())
 
-    @popError
+    @promptError
     def takePhoto(self, saveFolder: str) -> str:
         """
         takePhoto : Trigger a photo capture
@@ -182,13 +182,20 @@ class CameraWrapper:
             bytes: Last available jpeg frame
         """
         filesize = os.path.getsize(MOVIE_PATH)
+
+        if filesize == 0:
+            with open(DEFAULT_PHOTO, "br") as file:
+                return file.read()
+
         if filesize == self.prevFileSize:
             return self.prevFrame
         self.prevFileSize = filesize
 
         self.frameCount += 1
 
-        maxsize = 960 * 640 * 3  # Fully uncompressed image (theoretical maximum)
+        # Fully uncompressed image (theoretical maximum)
+        maxsize = 960 * 640 * 3 
+
         with open(MOVIE_PATH, "br") as file:
             # Sets cursor 690*640*3 bytes before the end of the file if possible
             file.seek(filesize - maxsize if (filesize - maxsize) > 0 else 0)
@@ -196,27 +203,27 @@ class CameraWrapper:
 
         frame = rawdata[rawdata.rfind(START_BYTES) :]
 
+        # Checking if the image has been fully received
         if not frame.endswith(STOP_BYTES):
             return self.prevFrame
 
         self.prevFrame = frame
-
-        # logger.debug(f"Updating screen {len(frame)}")
         return frame
 
-    @popError
+    @promptError
     def startPreview(self) -> None:
         """
         startPreview : Starts seperate process for capturing preview,
         releases camera lock to the process.
         """
-        self.cam.exit()
         self.isPreviewing = True
-
-        self.frameCount = 0
 
         self._cleanMovieFile()
 
+        self.frameCount = 0
+        self.previewStartTime = time.time_ns()
+
+        self.cam.exit()
         self.previewProcess = subprocess.Popen(
             ["gphoto2", "--capture-movie", "--force-overwrite"],
             stderr=subprocess.STDOUT,
@@ -227,7 +234,7 @@ class CameraWrapper:
         # "ffmpeg", "-i", "-", "-f", "mjpeg", "out.avi", "-y"])
         logger.info("POPEN Liveview capture started")
 
-    @popError
+    @promptError
     def stopPreview(self) -> None:
         """
         stopPreview : Terminates the separate preview process, stopping preview.
@@ -246,59 +253,54 @@ class CameraWrapper:
         self.logfile.close()
 
     def _cleanUp(self) -> None:
-        try:
-            self.cam.exit()
-        finally:
-            pass
+        exitFunctions =  (
+            self.cam.exit, 
+            self.stopPreview, 
+            self._cleanMovieFile,
+            self._clearGphoto,
+            self._closeLog
+        )
 
-        try:
-            self.stopPreview()
-        finally:
-            pass
-        
-        try:
-            self._clearGphoto()
-        finally:
-            pass
+        for func in exitFunctions:
+            try:
+                func()
+            finally:
+                pass
 
-        try:
-            self._closeLog()
-        finally:
-            pass
 
-    @popError
+    @promptError
     def getAbilities(self) -> tuple:
         return tuple(self.cam.get_abilities())
 
-    @popError
+    @promptError
     def getAbout(self):
         return self.cam.get_about()
 
-    @popError
+    @promptError
     def getConfig(self):
         return self.cam.get_config()
 
-    @popError
+    @promptError
     def getManual(self):
         return self.cam.get_manual()
 
-    @popError
+    @promptError
     def getPortInfo(self):
         return self.cam.get_port_info()
 
-    @popError
+    @promptError
     def getSimpleConfig(self):
         return self.cam.get_simple_config()
 
-    @popError
+    @promptError
     def getStorageInfo(self):
         return self.cam.get_storageinfo()
 
-    @popError
+    @promptError
     def getSummary(self):
         return self.cam.get_summary()
 
-    @popError
+    @promptError
     def listConfig(self):
         return self.cam.list_config()
 

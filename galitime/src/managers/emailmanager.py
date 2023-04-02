@@ -25,7 +25,7 @@ import logging
 
 from PyQt5.QtWidgets import QInputDialog
 
-from ..constants import ENCODING, INFO_FILE, DATE_FORMAT
+from ..constants import ENCODING, EMAIL_INFO_FILE, DATE_FORMAT
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -70,8 +70,8 @@ class EmailManager:
         return len(os.listdir(cls.emailFolder))
 
     @classmethod
-    def createMail(cls, mail: str) -> str:
-        """createMail : Creates a folder for the supplied email
+    def createMailFolder(cls, mail: str) -> str:
+        """createMailFolder : Creates a folder for the supplied email
 
         Args:
             mail (str): email in the form example@domain.xxx
@@ -88,6 +88,8 @@ class EmailManager:
         }
         with open(mailPath + "/email.json", "wt", encoding=ENCODING) as file:
             json.dump(mailDict, file, indent=4)
+
+        logger.info("New email folder created: %s" % mail)
 
         return mailPath
 
@@ -117,7 +119,7 @@ class EmailManager:
             dict: Python representation of the JSON file
         """
         with open(
-            cls.emailFolder + mail + "/" + INFO_FILE, "rt", encoding=ENCODING
+            cls.emailFolder + mail + "/" + EMAIL_INFO_FILE, "rt", encoding=ENCODING
         ) as file:
             return json.load(file)
 
@@ -128,8 +130,8 @@ class EmailManager:
         Args:
             infoDict (dict): _description_
         """
-        with open(cls.emailFolder + INFO_FILE, "wt", encoding=ENCODING) as file:
-            json.dump(file, infoDict)
+        with open(cls.emailFolder + EMAIL_INFO_FILE, "wt", encoding=ENCODING) as file:
+            json.dump(infoDict, file)
 
     @classmethod
     def addPhotoToMailFolder(cls, photoPath: str) -> None:
@@ -139,16 +141,18 @@ class EmailManager:
             photoPath (str): photo filepath to add to email
         """
         mailStr = QInputDialog.getText(
-            cls,
+            None,
             "Emails (séparés par des virgules)",
             "Votre ou vos emails séparés par des virgules",
-        )
+        )[0]
         mailList = [mail.strip() for mail in mailStr.split(",")]
+
+        logger.info("Adding photo to %s mail folders" % ', '.join(mailList))
 
         for mail in mailList:
             mailPath = cls.getMail(mail)
             if len(mailPath) == 0:
-                mailPath = cls.createMail(mail)
+                mailPath = cls.createMailFolder(mail)
 
             if len(photoPath) == 0:
                 logger.error("No photo supplied")
@@ -174,7 +178,6 @@ class EmailManager:
         config = configparser.ConfigParser()
         config.read("./email.cfg")
 
-
         session = smtplib.SMTP(
             host=config["server"]["hostname"],
             port=config["server"]["port"]
@@ -199,14 +202,14 @@ class EmailManager:
     def closeConnection(cls):
         try:
             cls.mailSession.close()
-            logger.info("Connection closed")
+            logger.info("Server connection closed")
         finally: pass
 
 
     @classmethod
-    def createMail(cls, emailAddress: str, imagePathList:list[str]) -> email.message.EmailMessage:
+    def createMailMessage(cls, emailAddress: str, imagePathList:list[str]) -> email.message.EmailMessage:
         """
-        createMail : Creates an email object and adds each image as an attachement.
+        createMailMessage : Creates an email object and adds each image as an attachement.
         The mail body is configured in the email.cfg file.
 
         Args:
@@ -252,12 +255,12 @@ class EmailManager:
         cls.connectToMailServer()
 
         for emailFolder in mailFolderList:
-            with open(emailFolder + INFO_FILE, 'rt', encoding=ENCODING) as info:
+            with open(emailFolder + EMAIL_INFO_FILE, 'rt', encoding=ENCODING) as info:
                 emailAddress = info.read().strip()
             
             os.listdir(emailFolder)
 
-            message = cls.createMail(emailAddress, imagePathList)
+            message = cls.createMailMessage(emailAddress, imagePathList)
 
             satus = cls.mailSession.send_message(message)
         

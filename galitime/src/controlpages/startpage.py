@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtWidgets import QLabel, QPushButton
 from PyQt5.QtCore import Qt
 
-from .. import stylesheet
+from ..stylesheet import cssify
 from ..managers.eventmanager import EventManager
 
 logger = logging.getLogger(__name__)
@@ -53,13 +53,13 @@ class StartPage:
 
         # 3. New event
         NewEventButton = QPushButton("Nouvel événement")
-        NewEventButton.setStyleSheet(stylesheet.BigBlueButton)
+        NewEventButton.setStyleSheet(cssify("Big Blue"))
         NewEventButton.clicked.connect(self.createEvent)
         MainVLayout.addWidget(NewEventButton)
 
         # 4. Load event
         LoadEventButton = QPushButton("Charger un événement")
-        LoadEventButton.setStyleSheet(stylesheet.BigBlueButton)
+        LoadEventButton.setStyleSheet(cssify("Big Blue"))
         LoadEventButton.clicked.connect(self.openEvent)
         MainVLayout.addWidget(LoadEventButton)
 

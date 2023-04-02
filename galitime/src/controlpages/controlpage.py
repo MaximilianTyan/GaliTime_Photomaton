@@ -6,13 +6,14 @@
 Module to handle the control page
 """
 
+import os
 import logging
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from PyQt5.QtWidgets import QLabel, QPushButton, QProgressDialog
 from PyQt5.QtCore import Qt, QTimer
 
-from .. import stylesheet
+from ..stylesheet import cssify
 from ..managers.eventmanager import EventManager
 from ..managers.emailmanager import EmailManager
 from ..managers.photomanager import PhotoManager
@@ -20,6 +21,8 @@ from ..managers.photomanager import PhotoManager
 from ..screenwindow import ScreenWindow
 from ..camera import CameraWrapper
 from ..printer import ImagePrinter
+
+from ..constants import DEFAULT_PHOTO, TEMP_PHOTO
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -35,7 +38,7 @@ class ControlPage:
         self.mainWindow = mainWindow
 
         self.PhotoButton = None
-        self.currentPhotoFullFilePath = None
+        self.currentPhotoFullFilePath = os.path.abspath(DEFAULT_PHOTO)
 
         self.tempEventInfo = {
             "saveFolder": None,
@@ -53,7 +56,7 @@ class ControlPage:
 
         self.progressDialog = None
         self.printerTimer = QTimer()
-        self.timer.timeout.connect(self.tickPrinterTimer)
+        self.printerTimer.timeout.connect(self.tickPrinterTimer)
 
     def load(self) -> QWidget:
         """
@@ -83,7 +86,7 @@ class ControlPage:
 
         # 3 Take Photo
         self.PhotoButton = QPushButton("Prendre la photo")
-        self.PhotoButton.setStyleSheet(stylesheet.BigBlueButton)
+        self.PhotoButton.setStyleSheet(cssify("Big Blue"))
         self.PhotoButton.clicked.connect(self.photoButtonCallback)
         MainVLayout.addWidget(self.PhotoButton)
 
@@ -92,13 +95,13 @@ class ControlPage:
         EmailButton.clicked.connect(
             lambda: EmailManager.addPhotoToMailFolder(self.currentPhotoFullFilePath)
         )
-        EmailButton.setStyleSheet(stylesheet.BigBlueButton)
+        EmailButton.setStyleSheet(cssify("Big Blue"))
         MainVLayout.addWidget(EmailButton)
 
         # 5 Print button
         self.PrintButton = QPushButton("Imprimer la photo")
         self.PrintButton.clicked.connect(self.printImage)
-        self.PrintButton.setStyleSheet(stylesheet.BigBlueButton)
+        self.PrintButton.setStyleSheet(cssify("Big Blue"))
         MainVLayout.addWidget(self.PrintButton)
 
         # 6 Option Layout
@@ -108,13 +111,13 @@ class ControlPage:
         # 6.1 Options button
         OptionButton = QPushButton("Options")
         OptionButton.clicked.connect(lambda: self.mainWindow.loadPage("options"))
-        OptionButton.setStyleSheet(stylesheet.BigButton)
+        OptionButton.setStyleSheet(cssify("Big"))
         OptionHLayout.addWidget(OptionButton)
 
         # 6.2 Camera options button
         CamOptionButton = QPushButton("Camera")
         CamOptionButton.clicked.connect(lambda: self.mainWindow.loadPage("camera"))
-        CamOptionButton.setStyleSheet(stylesheet.BigButton)
+        CamOptionButton.setStyleSheet(cssify("Big"))
         OptionHLayout.addWidget(CamOptionButton)
 
         logger.debug("Control page loaded")
@@ -127,7 +130,7 @@ class ControlPage:
         """
         if self.screenWindow.isPreviewing():
             self.PhotoButton.setEnabled(False)
-            self.PhotoButton.setStyleSheet(stylesheet.BigDisabledButton)
+            self.PhotoButton.setStyleSheet(cssify("Big Disabled"))
             self.startCountdown()
         else:
             self.PhotoButton.setText("Prendre la photo")
@@ -155,7 +158,7 @@ class ControlPage:
             self.takePhoto()
 
             self.PhotoButton.setEnabled(True)
-            self.PhotoButton.setStyleSheet(stylesheet.BigBlueButton)
+            self.PhotoButton.setStyleSheet(cssify("Big Blue"))
             self.PhotoButton.setText("Revenir à l'aperçu")
 
             logger.info("Photo countdown ended")
@@ -177,12 +180,16 @@ class ControlPage:
 
         self.screenWindow.stopPreview()
 
-        rawPhotoFullFilepath = self.camera.takePhoto(photoFolder)
-        self.screenWindow.displayImage(rawPhotoFullFilepath)
+        rawPhotoFullPath = self.camera.takePhoto(photoFolder)
+
+        if rawPhotoFullPath is None:
+            rawPhotoFullPath = os.path.abspath(DEFAULT_PHOTO)
+
+        self.screenWindow.displayImage(rawPhotoFullPath)
 
         PhotoManager.incrementPhotoNumber()
         self.currentPhotoFullFilePath = self.screenWindow.exportImage(
-            rawPhotoFullFilepath
+            EventManager.getEventFolder() + TEMP_PHOTO
         )
 
         return self.currentPhotoFullFilePath
@@ -193,34 +200,45 @@ class ControlPage:
         """
 
         logger.info("Printing file %s" % self.currentPhotoFullFilePath)
+
+        self.progressDialog = QProgressDialog("Printing photo...", "Close", 0, 100)
+        self.progressDialog.canceled.connect(self.stopPrinterTimer)
+        #self.progressDialog.setAutoClose(True)
+
         self.printer.printImage(self.currentPhotoFullFilePath)
 
         self.startPrintTimer()
         
 
-    def startPrintTimer(cls) -> None:
+    def startPrintTimer(self) -> None:
         """
         startPrintTimer : Displays a progress bar indicating the remaining time for the photo
         """
         logger.info("Printer timer started")
-        self.printerTimer.start(int(PRINT_TIME/100 * 1000))
+        self.printerTimer.ticksPassed = 0
+        self.printerTimer.start(int(PRINT_TIME/100))
 
         self.PrintButton.setEnabled(False)
-        self.PrintButton.setStyleSheet(stylesheet.BigDisabledButton)
-
-        self.progressDialog = QProgressDialog("Printing photo", "Fermer", 0, 100)
+        self.PrintButton.setStyleSheet(cssify("Big Disabled"))
 
     def tickPrinterTimer(self) -> None:
         """
         tickPrinterTimer : Updates the printer progressbar
         """
-        if self.printerTimer.ticksPassed >= PRINT_TIME:
-            self.printerTimer.stop()
-            logger.info("Printer timer stopped")
-
-            self.PrintButton.setEnabled(True)
-            self.PrintButton.setStyleSheet(stylesheet.BigBlueButton)
+        if self.printerTimer.ticksPassed >= 100:
+            self.stopPrinterTimer()
             return
 
         self.printerTimer.ticksPassed += 1
-        self.progressDialog.setValue(ticksPassed)
+        self.progressDialog.setValue(self.printerTimer.ticksPassed)
+    
+    def stopPrinterTimer(self) -> None:
+        """
+        stopPrinterTimer : Stops timer button and renenables the print button
+        """
+        self.printerTimer.stop()
+        logger.info("Printer timer stopped")
+
+        self.PrintButton.setEnabled(True)
+        self.PrintButton.setStyleSheet(cssify("Big Blue"))
+

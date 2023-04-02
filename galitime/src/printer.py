@@ -45,5 +45,10 @@ class ImagePrinter:
         """
         if filepath is None or len(filepath) == 0:
             raise FileNotFoundError("Filepath is empty")
+        
+        # Clear pending jobs
+        subprocess.run(["lprm", "-P", PRINTER, "-"])
+
+        logger.info("Printing %s" % filepath)
         result = subprocess.run(["lpr", "-P", PRINTER, "-o", "media=w288h432", "-o", "StpiShrinkOutput=Expand", filepath], check=True)
-        logger.info("Return code for print command %u", result)
+        logger.info("Return of print command %s" % str(result))

@@ -12,7 +12,7 @@ import inspect
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QPushButton, QComboBox, QTextEdit
 
-from .. import stylesheet
+from ..stylesheet import cssify
 from ..camera import CameraWrapper
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class CameraPage:
     StartPage : Handles camera page functionnality
     """
 
-    def __init__(self, mainWindow):
+    def __init__(self, mainWindow) -> None:
         self.mainWindow = mainWindow
         self.camera = CameraWrapper.getCamera()
 
@@ -35,7 +35,7 @@ class CameraPage:
         self.AboutText = None
         self.SummaryText = None
 
-    def load(self):
+    def load(self) -> None:
         """
         load : Loads the camera page in a QWidget and returns it
 
@@ -122,25 +122,36 @@ class CameraPage:
         MainVLayout.addLayout(ReconnectReturnLayout)
 
         # 4. Reconnect camera button
-        ReconnectButton = QPushButton("Reconnexion caméra")
-        ReconnectButton.setStyleSheet(stylesheet.BigDisabledButton)
-        ReconnectButton.clicked.connect(self.reconnectCamera)
-        ReconnectReturnLayout.addWidget(ReconnectButton)
+        self.ReconnectButton = QPushButton("Reconnexion caméra")
+        self.ReconnectButton.setStyleSheet(cssify("Big Disabled"))
+        self.ReconnectButton.clicked.connect(self.reconnectCamera)
+        ReconnectReturnLayout.addWidget(self.ReconnectButton)
+        self.updateReconnectButton()
 
         # 5 Return button
         ReturnButton = QPushButton("Retour")
-        ReturnButton.setStyleSheet(stylesheet.BigRedButton)
+        ReturnButton.setStyleSheet(cssify("Big Red"))
         ReturnButton.clicked.connect(lambda: self.mainWindow.loadPage("control"))
         ReconnectReturnLayout.addWidget(ReturnButton)
 
         logger.debug("Camera options page loaded")
         return MainContainer
 
-    def reconnectCamera(self):
+    def reconnectCamera(self) -> None:
         # self.cam.__init__()
         self.camera.connect()
+        self.updateReconnectButton()
+    
+    def updateReconnectButton(self) -> None:
+        if not self.camera.isConnected():
+            self.ReconnectButton.setStyleSheet(cssify("Big Blue"))
+            self.ReconnectButton.setEnabled(True)
+        else:
+            self.ReconnectButton.setStyleSheet(cssify("Big Disabled"))
+            self.ReconnectButton.setEnabled(False)
 
-    def updateCamList(self):
+
+    def updateCamList(self) -> None:
         self.CamsChoiceBox.clear()
         cam_list = self.camera.listCams()
 
