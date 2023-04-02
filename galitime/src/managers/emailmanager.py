@@ -20,6 +20,7 @@ import email
 import mimetypes
 import datetime
 
+import atexit
 import logging
 
 from PyQt5.QtWidgets import QInputDialog
@@ -34,6 +35,7 @@ class EmailManager:
     """emailManager : Class responsible for managing mail storage and access"""
 
     emailFolder = None
+    mailSession = None
 
     @classmethod
     def setEmailFolder(cls, folderpath: str) -> None:
@@ -158,48 +160,109 @@ class EmailManager:
             mailDict["photoNumber"] += 1
             cls._writeEmailInfo(mailDict)
         
-        cls.sendViaMail(mailList, photoPath)
-
+        #cls.sendViaMail(mailList, photoPath)
+    
     @classmethod
-    def sendViaMail(cls, emailAddressList: list[str], imagePath:str):
+    def connectToMailServer(cls) -> smtplib.SMTP:
         """
-        sendViaMail : Sends the image file to the list of emails givent using SMTP and a webserver
-        configured in the email.cfg file.
+        connectToMailServer : Creates and return a connection object to the mail server
+        The connection parameters are configured in the email.cfg file.
 
-        Args:
-            emailAddressList (list): List of email addresses to send this to
-            imagePath (str): Image file to be sent
+        Returns:
+            smtplib.SMTP: COnnection session
         """
         config = configparser.ConfigParser()
         config.read("./email.cfg")
 
-        with smtplib.SMTP(
+
+        session = smtplib.SMTP(
             host=config["server"]["hostname"],
             port=config["server"]["port"]
-        ) as session:
-            session.starttls()
+        )
 
-            # Loging in
-            user = config["user"]["login"]
-            with open("./email.key", "rt", encoding=ENCODING) as file:  # The filepath is hardcoded to avoid forgetting to add it in gitignore
-                password = file.read().strip()
+        cls.mailSession = session
+        atexit.register(cls.closeConnection)
 
-            session.login(user=user, password=password)
+        session.starttls()
 
-            # Email writing
-            message = email.message.EmailMessage()
-            message["Subject"] = config["message"]["body"].format(date=datetime.date().strftime(DATE_FORMAT))
-            message["From"] = user
-            message["To"] = ', '.join(emailAddressList)
+        logger.info("Opening connection to mail server %s" % config["server"]["hostname"] + ':' + config["server"]["hostname"])
 
+        # Loging in
+        user = config["user"]["login"]
+        with open("./email.key", "rt", encoding=ENCODING) as file:  # The filepath is hardcoded to avoid forgetting to add it in gitignore
+            password = file.read().strip()
+
+        session.login(user=user, password=password)
+
+
+    @classmethod
+    def closeConnection(cls):
+        try:
+            cls.mailSession.close()
+            logger.info("Connection closed")
+        finally: pass
+
+
+    @classmethod
+    def createMail(cls, emailAddress: str, imagePathList:list[str]) -> email.message.EmailMessage:
+        """
+        createMail : Creates an email object and adds each image as an attachement.
+        The mail body is configured in the email.cfg file.
+
+        Args:
+            emailAddress (str): Email addresse to send the created mail to.
+            imagePathList (list(str)): List of image file to be sent with the email.
+        
+        Returns:
+            email.message.EmailMessage : Mail object destined for emailAddress with images as attachements.
+        """
+
+        # Email writing
+        message = email.message.EmailMessage()
+        message["Subject"] = config["message"]["body"].format(date=datetime.date().strftime(DATE_FORMAT))
+        message["From"] = user
+        message["To"] = emailAddress
+
+        for imagePath in imagePathList:
             ctype, fileEncoding = mimetypes.guess_type(imagePath)
             subtype = ctype.split('/')[1]
 
             with open(imagePath, 'rb', encoding=fileEncoding) as file:
                 imgData = file.read()
             message.add_attachment(imgData, maintype="image", subtype=subtype)
-            
-            satus = session.send_message(message)
+        
+        return message
+    
+    @classmethod
+    def sendSingleMail(cls, mail):
+        logger.info("Sending single mail...")
+        cls.connectToMailServer()
 
+        status = cls.mailSession.send_message(message)
+        logger.info("Mail send request returned status %s" + str(status))
+
+        cls.closeConnection()
+        
+
+    @classmethod
+    def sendAllPhotosToMails(cls):
+        mailFolderList = os.listdir(self.getEmailFolder())
+        logger.info("Sending %u emails containing photos" % len(mailFolderList))
+        
+        cls.connectToMailServer()
+
+        for emailFolder in mailFolderList:
+            with open(emailFolder + INFO_FILE, 'rt', encoding=ENCODING) as info:
+                emailAddress = info.read().strip()
+            
+            os.listdir(emailFolder)
+
+            message = cls.createMail(emailAddress, imagePathList)
+
+            satus = cls.mailSession.send_message(message)
+        
+        logger.info("All mails have been sent")
+
+        cls.closeConnection()  
 
        

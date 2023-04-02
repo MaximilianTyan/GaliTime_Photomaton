@@ -35,6 +35,15 @@ class ImagePrinter:
         """
         return cls.PrinterInstance
 
-    def printImage(self, filepath):
+    def printImage(self, filepath: str) -> None:
+        f"""
+        printImage : Prints file with the printer {PRINTER} using 'lpr' command and CUPS with GutenPrint 5.3.4 drivers.
+        Raises an Exception if the process returns a non zero error code.
+
+        Args:
+            filepath (str): Filepath of the image to print
+        """
+        if filepath is None or len(filepath) == 0:
+            raise FileNotFoundError("Filepath is empty")
         result = subprocess.run(["lpr", "-P", PRINTER, "-o", "media=w288h432", "-o", "StpiShrinkOutput=Expand", filepath], check=True)
         logger.info("Return code for print command %u", result)

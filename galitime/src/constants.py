@@ -29,3 +29,4 @@ INFO_FILE = "email.json"
 
 # Printer settings
 PRINTER = "DP-QW410"
+PRINT_TIME = 100 # tenths of seconds

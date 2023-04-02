@@ -9,7 +9,7 @@ Module to handle the control page
 import logging
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
-from PyQt5.QtWidgets import QLabel, QPushButton
+from PyQt5.QtWidgets import QLabel, QPushButton, QProgressDialog
 from PyQt5.QtCore import Qt, QTimer
 
 from .. import stylesheet
@@ -24,6 +24,7 @@ from ..printer import ImagePrinter
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
+from ..constants import PRINT_TIME
 
 class ControlPage:
     """
@@ -49,6 +50,10 @@ class ControlPage:
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.tickTimer)
+
+        self.progressDialog = None
+        self.printerTimer = QTimer()
+        self.timer.timeout.connect(self.tickPrinterTimer)
 
     def load(self) -> QWidget:
         """
@@ -91,10 +96,10 @@ class ControlPage:
         MainVLayout.addWidget(EmailButton)
 
         # 5 Print button
-        PrintButton = QPushButton("Imprimer la photo")
-        PrintButton.clicked.connect(self.printImage)
-        PrintButton.setStyleSheet(stylesheet.BigBlueButton)
-        MainVLayout.addWidget(PrintButton)
+        self.PrintButton = QPushButton("Imprimer la photo")
+        self.PrintButton.clicked.connect(self.printImage)
+        self.PrintButton.setStyleSheet(stylesheet.BigBlueButton)
+        MainVLayout.addWidget(self.PrintButton)
 
         # 6 Option Layout
         OptionHLayout = QHBoxLayout()
@@ -186,5 +191,36 @@ class ControlPage:
         """
         printImage : Prints the current photo
         """
+
         logger.info("Printing file %s" % self.currentPhotoFullFilePath)
         self.printer.printImage(self.currentPhotoFullFilePath)
+
+        self.startPrintTimer()
+        
+
+    def startPrintTimer(cls) -> None:
+        """
+        startPrintTimer : Displays a progress bar indicating the remaining time for the photo
+        """
+        logger.info("Printer timer started")
+        self.printerTimer.start(int(PRINT_TIME/100 * 1000))
+
+        self.PrintButton.setEnabled(False)
+        self.PrintButton.setStyleSheet(stylesheet.BigDisabledButton)
+
+        self.progressDialog = QProgressDialog("Printing photo", "Fermer", 0, 100)
+
+    def tickPrinterTimer(self) -> None:
+        """
+        tickPrinterTimer : Updates the printer progressbar
+        """
+        if self.printerTimer.ticksPassed >= PRINT_TIME:
+            self.printerTimer.stop()
+            logger.info("Printer timer stopped")
+
+            self.PrintButton.setEnabled(True)
+            self.PrintButton.setStyleSheet(stylesheet.BigBlueButton)
+            return
+
+        self.printerTimer.ticksPassed += 1
+        self.progressDialog.setValue(ticksPassed)
