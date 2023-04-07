@@ -7,7 +7,6 @@ Module containing class handling camera IO and related functions
 """
 
 import os
-import shutil
 import subprocess
 import time
 import logging
@@ -17,12 +16,13 @@ import gphoto2 as gp
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QDateTime
 
-from .constants import ENCODING, MOVIE_PATH
-from .constants import CAMERA_LOGFILE, DEFAULT_PHOTO
-from .constants import START_BYTES, STOP_BYTES
+from ..utilities.constants import ENCODING, MOVIE_PATH
+from ..utilities.constants import CAMERA_LOG_FILE, DEFAULT_PHOTO
+from ..utilities.constants import START_BYTES, STOP_BYTES
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
+
 
 def promptError(func) -> callable:
     """
@@ -52,6 +52,7 @@ def promptError(func) -> callable:
 
     return encapsulated
 
+
 class CameraWrapper:
     """
     Wrapper class for the camera, in charge of creating and managing processes
@@ -68,7 +69,7 @@ class CameraWrapper:
         self.previewStartTime = 0
 
         self.frameCount = 0
-        self.logfile = open(CAMERA_LOGFILE, "wt", encoding=ENCODING)
+        self.logfile = open(CAMERA_LOG_FILE, "wt", encoding=ENCODING)
 
         self._clearGphoto()
         self.cam = gp.Camera()
@@ -98,7 +99,7 @@ class CameraWrapper:
         _clearGphoto : Clear all processes origiating from gphoto2 that may lock the camera.
         """
 
-        subprocess.run(["pkill", "gphoto2"])
+        subprocess.run(["pkill", "gphoto2"], check=False)
 
         # clearedProcess = False
         # pythonPID = os.getpid()
@@ -127,6 +128,12 @@ class CameraWrapper:
         logger.info("Cleared %s file (%u bytes)", MOVIE_PATH, filesize)
 
     def isConnected(self) -> bool:
+        """
+        isConnected : Returns the connection status of the camera. True if connected, False otherwise
+
+        Returns:
+            bool: Connection state
+        """
         return self.connected
 
     @promptError
@@ -194,7 +201,7 @@ class CameraWrapper:
         self.frameCount += 1
 
         # Fully uncompressed image (theoretical maximum)
-        maxsize = 960 * 640 * 3 
+        maxsize = 960 * 640 * 3
 
         with open(MOVIE_PATH, "br") as file:
             # Sets cursor 690*640*3 bytes before the end of the file if possible
@@ -228,7 +235,7 @@ class CameraWrapper:
             ["gphoto2", "--capture-movie", "--force-overwrite"],
             stderr=subprocess.STDOUT,
             stdout=self.logfile,
-            cwd=os.path.dirname(MOVIE_PATH)
+            cwd=os.path.dirname(MOVIE_PATH),
         )
         # , "--stdout", "|",
         # "ffmpeg", "-i", "-", "-f", "mjpeg", "out.avi", "-y"])
@@ -253,12 +260,12 @@ class CameraWrapper:
         self.logfile.close()
 
     def _cleanUp(self) -> None:
-        exitFunctions =  (
-            self.cam.exit, 
-            self.stopPreview, 
+        exitFunctions = (
+            self.cam.exit,
+            self.stopPreview,
             self._cleanMovieFile,
             self._clearGphoto,
-            self._closeLog
+            self._closeLog,
         )
 
         for func in exitFunctions:
@@ -266,7 +273,6 @@ class CameraWrapper:
                 func()
             finally:
                 pass
-
 
     @promptError
     def getAbilities(self) -> tuple:

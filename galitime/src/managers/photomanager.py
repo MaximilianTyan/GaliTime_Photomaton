@@ -6,8 +6,6 @@
 Screen window, contains screen class and control options
 """
 
-import os
-
 import logging
 
 logger = logging.getLogger(__name__)

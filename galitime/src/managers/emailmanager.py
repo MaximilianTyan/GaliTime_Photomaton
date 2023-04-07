@@ -3,7 +3,7 @@
 # encoding:utf-8
 
 """
-Module for email handling
+Module in charge of email handling
 """
 
 # File manipulation
@@ -23,9 +23,8 @@ import datetime
 import atexit
 import logging
 
-from PyQt5.QtWidgets import QInputDialog
-
-from ..constants import ENCODING, EMAIL_INFO_FILE, DATE_FORMAT
+from .emailinput import EmailInput
+from ..utilities.constants import ENCODING, EMAIL_INFO_FILE, DATE_FORMAT
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -70,6 +69,16 @@ class EmailManager:
         return len(os.listdir(cls.emailFolder))
 
     @classmethod
+    def getEmailList(cls) -> list[str]:
+        """
+        getEmailList : Returns a list contining all email folders
+
+        Returns:
+            list[str]: List of emai folders
+        """
+        return os.listdir(cls.emailFolder)
+
+    @classmethod
     def createMailFolder(cls, mail: str) -> str:
         """createMailFolder : Creates a folder for the supplied email
 
@@ -86,10 +95,9 @@ class EmailManager:
             "email": mail,
             "photoNumber": 0,
         }
-        with open(mailPath + "/email.json", "wt", encoding=ENCODING) as file:
-            json.dump(mailDict, file, indent=4)
+        cls._writeEmailInfo(mail, mailDict)
 
-        logger.info("New email folder created: %s" % mail)
+        logger.info("New email folder created: %s", mail)
 
         return mailPath
 
@@ -110,28 +118,17 @@ class EmailManager:
 
     @classmethod
     def _readEmailInfo(cls, mail: str) -> dict:
-        """_readEmailInfo : Returns email info json file as dict object.
-
-        Args:
-            mail (str):  email in the form example@domain.xxx
-
-        Returns:
-            dict: Python representation of the JSON file
-        """
         with open(
             cls.emailFolder + mail + "/" + EMAIL_INFO_FILE, "rt", encoding=ENCODING
         ) as file:
             return json.load(file)
 
     @classmethod
-    def _writeEmailInfo(cls, infoDict: dict) -> None:
-        """_writeEmailInfo _summary_
+    def _writeEmailInfo(cls, mail: str, infoDict: dict) -> None:
+        mailPath = cls.emailFolder + mail.replace("/", " ")
 
-        Args:
-            infoDict (dict): _description_
-        """
-        with open(cls.emailFolder + EMAIL_INFO_FILE, "wt", encoding=ENCODING) as file:
-            json.dump(infoDict, file)
+        with open(mailPath + "/" + EMAIL_INFO_FILE, "wt", encoding=ENCODING) as file:
+            json.dump(infoDict, file, indent=4)
 
     @classmethod
     def addPhotoToMailFolder(cls, photoPath: str) -> None:
@@ -140,14 +137,11 @@ class EmailManager:
         Args:
             photoPath (str): photo filepath to add to email
         """
-        mailStr = QInputDialog.getText(
-            None,
-            "Emails (séparés par des virgules)",
-            "Votre ou vos emails séparés par des virgules",
-        )[0]
-        mailList = [mail.strip() for mail in mailStr.split(",")]
+        Input = EmailInput()
+        Input.prompt(cls.getEmailList())
+        mailList = Input.getSelectedMails()
 
-        logger.info("Adding photo to %s mail folders" % ', '.join(mailList))
+        logger.info("Adding photo to %s mail folders", ", ".join(mailList))
 
         for mail in mailList:
             mailPath = cls.getMail(mail)
@@ -162,10 +156,10 @@ class EmailManager:
 
             mailDict = cls._readEmailInfo(mail)
             mailDict["photoNumber"] += 1
-            cls._writeEmailInfo(mailDict)
-        
-        #cls.sendViaMail(mailList, photoPath)
-    
+            cls._writeEmailInfo(mail, mailDict)
+
+        # cls.sendViaMail(mailList, photoPath)
+
     @classmethod
     def connectToMailServer(cls) -> smtplib.SMTP:
         """
@@ -179,8 +173,7 @@ class EmailManager:
         config.read("./email.cfg")
 
         session = smtplib.SMTP(
-            host=config["server"]["hostname"],
-            port=config["server"]["port"]
+            host=config["server"]["hostname"], port=config["server"]["port"]
         )
 
         cls.mailSession = session
@@ -188,26 +181,37 @@ class EmailManager:
 
         session.starttls()
 
-        logger.info("Opening connection to mail server %s" % config["server"]["hostname"] + ':' + config["server"]["hostname"])
+        logger.info(
+            "Opening connection to mail server "
+            + config["server"]["hostname"]
+            + ":"
+            + config["server"]["hostname"]
+        )
 
         # Loging in
         user = config["user"]["login"]
-        with open("./email.key", "rt", encoding=ENCODING) as file:  # The filepath is hardcoded to avoid forgetting to add it in gitignore
+        with open(
+            "./email.key", "rt", encoding=ENCODING
+        ) as file:  # The filepath is hardcoded to avoid forgetting to add it in gitignore
             password = file.read().strip()
 
         session.login(user=user, password=password)
 
-
     @classmethod
-    def closeConnection(cls):
+    def closeConnection(cls) -> None:
+        """
+        closeConnection : Closes the connection to the SMTP server
+        """
         try:
             cls.mailSession.close()
             logger.info("Server connection closed")
-        finally: pass
-
+        finally:
+            pass
 
     @classmethod
-    def createMailMessage(cls, emailAddress: str, imagePathList:list[str]) -> email.message.EmailMessage:
+    def createMailMessage(
+        cls, emailAddress: str, imagePathList: list[str]
+    ) -> email.message.EmailMessage:
         """
         createMailMessage : Creates an email object and adds each image as an attachement.
         The mail body is configured in the email.cfg file.
@@ -215,57 +219,60 @@ class EmailManager:
         Args:
             emailAddress (str): Email addresse to send the created mail to.
             imagePathList (list(str)): List of image file to be sent with the email.
-        
+
         Returns:
             email.message.EmailMessage : Mail object destined for emailAddress with images as attachements.
         """
 
+        config = configparser.ConfigParser()
+        config.read("./email.cfg")
+
         # Email writing
         message = email.message.EmailMessage()
-        message["Subject"] = config["message"]["body"].format(date=datetime.date().strftime(DATE_FORMAT))
-        message["From"] = user
+        message["Subject"] = config["message"]["body"].format(
+            date=datetime.date().strftime(DATE_FORMAT)
+        )
+        message["From"] = config["user"]["login"]
         message["To"] = emailAddress
 
         for imagePath in imagePathList:
             ctype, fileEncoding = mimetypes.guess_type(imagePath)
-            subtype = ctype.split('/')[1]
+            subtype = ctype.split("/")[1]
 
-            with open(imagePath, 'rb', encoding=fileEncoding) as file:
+            with open(imagePath, "rb", encoding=fileEncoding) as file:
                 imgData = file.read()
             message.add_attachment(imgData, maintype="image", subtype=subtype)
-        
+
         return message
-    
+
     @classmethod
-    def sendSingleMail(cls, mail):
+    def sendSingleMail(cls, message) -> None:
         logger.info("Sending single mail...")
         cls.connectToMailServer()
 
         status = cls.mailSession.send_message(message)
-        logger.info("Mail send request returned status %s" + str(status))
+        logger.info("Mail send request returned status %s", str(status))
 
         cls.closeConnection()
-        
 
     @classmethod
-    def sendAllPhotosToMails(cls):
-        mailFolderList = os.listdir(self.getEmailFolder())
-        logger.info("Sending %u emails containing photos" % len(mailFolderList))
-        
+    def sendAllPhotosToMails(cls) -> None:
+        mailFolderList = os.listdir(cls.getEmailFolder())
+        logger.info("Sending %u emails containing photos", len(mailFolderList))
+
         cls.connectToMailServer()
 
         for emailFolder in mailFolderList:
-            with open(emailFolder + EMAIL_INFO_FILE, 'rt', encoding=ENCODING) as info:
+            with open(emailFolder + EMAIL_INFO_FILE, "rt", encoding=ENCODING) as info:
                 emailAddress = info.read().strip()
-            
-            os.listdir(emailFolder)
+
+            imagePathList = os.listdir(emailFolder)
+            imagePathList.remove(EMAIL_INFO_FILE)
 
             message = cls.createMailMessage(emailAddress, imagePathList)
 
-            satus = cls.mailSession.send_message(message)
-        
+            _status = cls.mailSession.send_message(message)
+
         logger.info("All mails have been sent")
 
-        cls.closeConnection()  
-
-       
+        cls.closeConnection()

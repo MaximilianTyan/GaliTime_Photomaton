@@ -10,6 +10,7 @@ import logging
 import os
 
 from .constants import ENCODING, LOGGER_FORMAT
+from .constants import APP_LOG_FILE, LOG_FOLDER
 
 
 def setup():
@@ -17,14 +18,12 @@ def setup():
     setup : Sets up configuration for the python logging module
     """
 
-    if not os.path.exists("galitime/logs"):
-        os.mkdir(
-            "galitime/logs",
-        )
+    if not os.path.exists(LOG_FOLDER):
+        os.mkdir(LOG_FOLDER)
 
     logging.basicConfig(format=LOGGER_FORMAT, level=0)
 
-    handler = logging.FileHandler("galitime/logs/galitime.log", "wt", encoding=ENCODING)
+    handler = logging.FileHandler(APP_LOG_FILE, "wt", encoding=ENCODING)
     formatter = logging.Formatter(LOGGER_FORMAT)
     handler.setFormatter(formatter)
 

@@ -18,8 +18,8 @@ from PyQt5.QtCore import Qt, QDate
 from ..managers.eventmanager import EventManager
 from ..screenwindow import ScreenWindow
 
-from ..stylesheet import cssify
-from ..constants import DATE_FORMAT
+from ..utilities.stylesheet import cssify
+from ..utilities.constants import DATE_FORMAT
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -60,7 +60,7 @@ class OptionsPage:
         """
         logger.debug("Loading options page")
         # Main layout, vertical, contains Title, Button Layout
-        MainContainer = QWidget(self.mainWindow)        
+        MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
         MainVLayout.setAlignment(Qt.AlignVCenter)
 
@@ -85,7 +85,7 @@ class OptionsPage:
         # 2.2 Validate Button
         ValidateNameButton = QPushButton("Valider")
         ValidateNameButton.clicked.connect(self.changeEventName)
-        #ValidateNameButton.setStyleSheet(cssify("Big Flat"))
+        # ValidateNameButton.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(ValidateNameButton, 1, 2)
 
         # 3.1 Date
@@ -98,7 +98,7 @@ class OptionsPage:
         # 3.2 Date
         ValidateDateButton = QPushButton("Valider")
         ValidateDateButton.clicked.connect(self.changeEventDate)
-        #ValidateDateButton.setStyleSheet(cssify("Big Flat"))
+        # ValidateDateButton.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(ValidateDateButton, 2, 2)
 
         # 4.1 saveFolderPath label
@@ -112,7 +112,7 @@ class OptionsPage:
         # 4.2 Browe button
         BrowseButton = QPushButton("Parcourir")
         BrowseButton.clicked.connect(self.chooseSaveFolderButtonCall)
-        #BrowseButton.setStyleSheet(cssify("Big Flat"))
+        # BrowseButton.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(BrowseButton, 3, 2)
 
         # 5.1 Decorfile label
@@ -126,7 +126,7 @@ class OptionsPage:
         # 5.2 Browe button
         BrowseButton2 = QPushButton("Choisir")
         BrowseButton2.clicked.connect(self.chooseDecorFileButtonCall)
-        #BrowseButton2.setStyleSheet(cssify("Big Flat"))
+        # BrowseButton2.setStyleSheet(cssify("Big Flat"))
         OptionsGridLayout.addWidget(BrowseButton2, 4, 2)
 
         # 6 Error Label
@@ -157,10 +157,9 @@ class OptionsPage:
             # Display data loaded from save file
             self.changeEventName()
             self.changeEventDate()
-            self.validateParentFolder(EventManager.getEventFolder())
-            self.validateDecorFile(ScreenWindow.getScreen().getDecorFile())
+            self._validateParentFolder(EventManager.getEventFolder())
+            self._validateDecorFile(ScreenWindow.getScreen().getDecorFile())
 
-        
         logger.debug("Options page loaded")
         return MainContainer
 
@@ -173,7 +172,7 @@ class OptionsPage:
             self.mainWindow, caption="Dossier d'enregistrement"
         )
         saveFolderPath = parentFolderPath + "/" + self.tempEventInfo["eventName"] + "/"
-        self.validateParentFolder(saveFolderPath)
+        self._svalidateParentFolder(saveFolderPath)
 
     def chooseDecorFileButtonCall(self) -> None:
         """
@@ -183,13 +182,13 @@ class OptionsPage:
         selectedFilename = QFileDialog.getOpenFileName(
             self.mainWindow, caption="Image de décor"
         )[0]
-        self.validateDecorFile(selectedFilename)
+        self._validateDecorFile(selectedFilename)
 
-    def validateParentFolder(self, saveFolderPath: str) -> None:
+    def _validateParentFolder(self, saveFolderPath: str) -> None:
         self.tempEventInfo["saveFolder"] = saveFolderPath
         self.saveFolderPathLabel.setText("Dossier d'enregistrement:\n" + saveFolderPath)
 
-    def validateDecorFile(self, decorFilePath: str) -> None:
+    def _validateDecorFile(self, decorFilePath: str) -> None:
         self.tempEventInfo["decorFile"] = decorFilePath
         self.DecorFileLabel.setText("Image de décor:\n" + decorFilePath)
 

@@ -12,8 +12,8 @@ import inspect
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QPushButton, QComboBox, QTextEdit
 
-from ..stylesheet import cssify
-from ..camera import CameraWrapper
+from ..utilities.stylesheet import cssify
+from ..peripherals.camera import CameraWrapper
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -27,6 +27,8 @@ class CameraPage:
     def __init__(self, mainWindow) -> None:
         self.mainWindow = mainWindow
         self.camera = CameraWrapper.getCamera()
+
+        self.ReconnectButton = None
 
         self.CamsChoiceBox = None
         self.AbilitiesText = None
@@ -62,60 +64,17 @@ class CameraPage:
         CamsHLayout.addWidget(CamsUpdateButton)
 
         # 3 Info Grid Layout
-        InfoGridLayout = QGridLayout()
-        MainVLayout.addLayout(InfoGridLayout)
-
-        # 3.1 Abilities Layout
         AbilitiesVLayout = QVBoxLayout()
-        InfoGridLayout.addLayout(AbilitiesVLayout, 0, 0)
+        MainVLayout.addLayout(AbilitiesVLayout)
 
-        # 3.1.1 Abilities list button
-        AbilitiesUpdateButton = QPushButton("MAJ Abilities")
-        AbilitiesUpdateButton.clicked.connect(self.updateAbilities)
+        # 3.1 Abilities list button
+        AbilitiesUpdateButton = QPushButton("Mise à jour")
+        AbilitiesUpdateButton.clicked.connect(self.updateAll)
         AbilitiesVLayout.addWidget(AbilitiesUpdateButton)
 
-        # 3.1.2 Abilities list button
-        self.AbilitiesText = QTextEdit()
-        AbilitiesVLayout.addWidget(self.AbilitiesText)
-
-        # 3.2 Config Layout
-        ConfigVLayout = QVBoxLayout()
-        InfoGridLayout.addLayout(ConfigVLayout, 0, 1)
-
-        # 3.2.1 Config list button
-        ConfigUpdateButton = QPushButton("MAJ Config")
-        ConfigUpdateButton.clicked.connect(self.updateConfig)
-        ConfigVLayout.addWidget(ConfigUpdateButton)
-
-        # 3.2.2 Config list button
-        self.ConfigText = QTextEdit()
-        ConfigVLayout.addWidget(self.ConfigText)
-
-        # 3.3 About Layout
-        AboutVLayout = QVBoxLayout()
-        InfoGridLayout.addLayout(AboutVLayout, 1, 0)
-
-        # 3.3.1 About list button
-        AboutUpdateButton = QPushButton("MAJ About")
-        AboutUpdateButton.clicked.connect(self.updateAbout)
-        AboutVLayout.addWidget(AboutUpdateButton)
-
-        # 3.3.2 About list button
-        self.AboutText = QTextEdit()
-        AboutVLayout.addWidget(self.AboutText)
-
-        # 3.4 Summary Layout
-        SummaryVLayout = QVBoxLayout()
-        InfoGridLayout.addLayout(SummaryVLayout, 1, 1)
-
-        # 3.4.1 Summary list button
-        SummaryUpdateButton = QPushButton("MAJ Summary")
-        SummaryUpdateButton.clicked.connect(self.updateSummary)
-        SummaryVLayout.addWidget(SummaryUpdateButton)
-
-        # 3.4.2 Summary list button
-        self.SummaryText = QTextEdit()
-        SummaryVLayout.addWidget(self.SummaryText)
+        # 3.1 Abilities list button
+        self.PropertiesText = QTextEdit()
+        AbilitiesVLayout.addWidget(self.PropertiesText)
 
         # 4 Reconnect Return layout
         ReconnectReturnLayout = QHBoxLayout()
@@ -138,11 +97,20 @@ class CameraPage:
         return MainContainer
 
     def reconnectCamera(self) -> None:
+        """
+        reconnectCamera : Tries to reconnect gphoto2.Camera to the camera
+        peripheral and updates the camera status.
+        """
         # self.cam.__init__()
         self.camera.connect()
         self.updateReconnectButton()
-    
+
     def updateReconnectButton(self) -> None:
+        """
+        updateReconnectButton : Updates the camera reconnect button style
+        according to the camera state. If camera is already connected,
+        displays disable button.
+        """
         if not self.camera.isConnected():
             self.ReconnectButton.setStyleSheet(cssify("Big Blue"))
             self.ReconnectButton.setEnabled(True)
@@ -150,20 +118,35 @@ class CameraPage:
             self.ReconnectButton.setStyleSheet(cssify("Big Disabled"))
             self.ReconnectButton.setEnabled(False)
 
-
     def updateCamList(self) -> None:
+        """
+        updateCamList : Updates the camera list choice box with all
+        available cameras, puts None if no camera is available
+        """
         self.CamsChoiceBox.clear()
-        cam_list = self.camera.listCams()
+        camList = self.camera.listCams()
 
-        if len(cam_list) == 0 or cam_list is None:
+        if len(camList) == 0 or camList is None:
             self.CamsChoiceBox.addItem("None")
+            return
 
-        for cam in cam_list:
+        for cam in camList:
             for i in cam:
                 self.CamsChoiceBox.addItem(i)
 
     @staticmethod
-    def filteredDir(obj):
+    def filteredDir(obj) -> dict:
+        """
+        filteredDir : Converts an Swig object properties to a dictionnary
+        discarding useless functions such as thisown() and executing callable
+        objects such as get_children().
+
+        Args:
+            obj (Camera data): Data object to be filtered
+
+        Returns:
+            dict: Filtered attributes
+        """
         outdict = {}
 
         for attr in dir(obj):
@@ -228,18 +211,19 @@ class CameraPage:
         text += "<table>"
         return text
 
-    def updateAbilities(self) -> None:
-        camAbilities = self.filteredDir(self.camera.getAbilities())
-        self.AbilitiesText.setText(self.htmlTablize(camAbilities))
+    def updateAll(self) -> None:
+        """
+        updateAll : Updates the camera properties table
+        """
+        propertiesDict = {
+            "Capacités": self.camera.getAbilities(),
+            "Configration": self.camera.getConfig(),
+            "À propos" : self.camera.getAbout(),
+            "Sommaire" : self.camera.getSummary(),
+        }
+        displayStr = ""
+        for name, obj in propertiesDict.items():
+            displayStr += f"\n<h3>{name}</h3>\n"
+            displayStr += self.htmlTablize(self.filteredDir(obj))
 
-    def updateConfig(self) -> None:
-        camConfig = self.filteredDir(self.camera.getConfig())
-        self.ConfigText.setText(self.htmlTablize(camConfig))
-
-    def updateAbout(self) -> None:
-        camAbout = self.filteredDir(self.camera.getAbout())
-        self.AboutText.setText(self.htmlTablize(camAbout))
-
-    def updateSummary(self) -> None:
-        camSummary = self.filteredDir(self.camera.getSummary())
-        self.SummaryText.setText(self.htmlTablize(camSummary))
+        self.PropertiesText.setText(displayStr)

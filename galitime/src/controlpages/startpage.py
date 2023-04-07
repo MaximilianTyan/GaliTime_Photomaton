@@ -2,7 +2,9 @@
 # encoding:utf-8
 # coding:utf-8
 
-print(__name__)
+"""
+Module implementing the start page
+"""
 
 import logging
 
@@ -10,8 +12,9 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtWidgets import QLabel, QPushButton
 from PyQt5.QtCore import Qt
 
-from ..stylesheet import cssify
 from ..managers.eventmanager import EventManager
+
+from ..utilities.stylesheet import cssify
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

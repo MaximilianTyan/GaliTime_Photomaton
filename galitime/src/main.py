@@ -12,10 +12,10 @@ from PyQt5.QtWidgets import QApplication
 
 from .controlwindow import ControlWindow
 from .screenwindow import ScreenWindow
-from .camera import CameraWrapper
-from .printer import ImagePrinter
 
-from . import logger
+from .peripherals.camera import CameraWrapper
+
+from .utilities import logger
 
 
 def main():
@@ -29,13 +29,12 @@ def main():
     app = QApplication(sys.argv)
 
     cam = CameraWrapper()
-    printer = ImagePrinter()
     screen = ScreenWindow()
-    main = ControlWindow()
+    control = ControlWindow()
 
     # App execution -----------------------------------
 
-    main.show()
+    control.show()
     screen.show()
 
     cam.connect()

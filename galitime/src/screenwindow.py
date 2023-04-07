@@ -7,18 +7,18 @@ Screen window, contains screen class and control options
 """
 
 import logging
-
-import os, atexit
+import os
+import atexit
 
 from PyQt5.QtWidgets import QMainWindow, QLabel
 from PyQt5.QtGui import QPixmap, QPainter
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtCore import Qt, QTimer
 
-from .camera import CameraWrapper
+from .peripherals.camera import CameraWrapper
 
-from .constants import FPS, RESTART_INTERVAL
-from .constants import DEFAULT_CAM_VIEW, DEFAULT_DECOR
+from .utilities.constants import FPS, RESTART_INTERVAL
+from .utilities.constants import DEFAULT_CAM_VIEW, DEFAULT_DECOR
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -146,12 +146,13 @@ class ScreenWindow(QMainWindow):
             imagepath (str): Path to the image (absolute or relative)
         """
         self.screenImage.load(imagepath)
-        #if not self.isPreviewing():
+        # if not self.isPreviewing():
         self.updateScreen()
 
     def exportImage(self, filepath: str) -> str:
         """
-        saveImage : Saves the image currently displayed on screen (including decor and text) at the filepath.
+        saveImage : Saves the image currently displayed on screen
+        (including decor and text) at the filepath.
 
         Args:
             filepath (str): Filepath with filename to save the image
@@ -175,13 +176,15 @@ class ScreenWindow(QMainWindow):
 
     def startPreview(self) -> None:
         """
-        startPreview : Starts the preview process, setting it to 30 fps ideally, being limited by the camera throughput.
-        A preview restart will occur every 30 seconds to keep the camera output stream file size limited.
+        startPreview : Starts the preview process, setting it to 30 fps ideally,
+        being limited by the camera throughput. A preview restart will occur every
+        30 seconds (defined in constants.py) to keep the camera output stream file
+        size limited.
         """
         self.reset()
 
         # Launching capture command
-        logger.info("Preview started with %u fps" % FPS)
+        logger.info("Preview started with %u fps", FPS)
         self.cam.startPreview()
 
         self.updateTimer.start(round(1000 / FPS))
@@ -197,7 +200,8 @@ class ScreenWindow(QMainWindow):
 
     def updateScreen(self) -> None:
         """
-        updateScreen : Updates the screen with the base image, in addition to decorfile and text overlayed in that order.
+        updateScreen : Updates the screen with the base image,
+        in addition to decorfile and text overlayed in that order.
         """
         if self.screenImage.isNull():
             # logger.error("Screen Image is NULL, returning from updateScreen")
@@ -233,7 +237,8 @@ class ScreenWindow(QMainWindow):
 
     def restartPreview(self) -> None:
         """
-        restartPreview : Stops and restarts the preview process, see startPreview and stopPreview for more information.
+        restartPreview : Stops and restarts the preview process.
+        See startPreview and stopPreview for more information.
         """
         logger.info("Restarting Preview")
         self.stopPreview()
@@ -241,12 +246,10 @@ class ScreenWindow(QMainWindow):
 
     def _cleanUp(self):
         try:
-            if self.updateTimer.isActive():
-                self.updateTimer.stop()
+            self.updateTimer.stop()
         finally:
             pass
         try:
-            if self.restartTimer.isActive():
-                self.updateTimer.stop()
+            self.restartTimer.stop()
         finally:
             pass

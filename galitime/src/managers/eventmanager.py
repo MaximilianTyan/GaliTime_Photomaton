@@ -19,9 +19,8 @@ from PyQt5.QtCore import QDate
 from ..managers.emailmanager import EmailManager
 from ..managers.photomanager import PhotoManager
 
-
-from ..constants import DATE_FORMAT, ENCODING
-from ..constants import EVENT_SAVE_FILE
+from ..utilities.constants import DATE_FORMAT, ENCODING
+from ..utilities.constants import EVENT_SAVE_FILE
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
