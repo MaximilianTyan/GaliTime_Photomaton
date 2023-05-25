@@ -1,2 +1,4 @@
 #!/bin/bash
-python3 -m ./galitime
+
+source env/bin/activate
+python3 -m galitime
