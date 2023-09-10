@@ -127,10 +127,16 @@ class ControlPage:
         OptionHLayout.addWidget(OptionButton)
 
         # 6.2 Camera options button
-        CamOptionButton = QPushButton("Camera")
+        CamOptionButton = QPushButton("Caméra")
         CamOptionButton.clicked.connect(lambda: self.mainWindow.loadPage("camera"))
         CamOptionButton.setStyleSheet(cssify("Big"))
         OptionHLayout.addWidget(CamOptionButton)
+
+        # 6.3 Printer options button
+        PrintOptionButton = QPushButton("Imprimante")
+        PrintOptionButton.clicked.connect(lambda: self.mainWindow.loadPage("printer"))
+        PrintOptionButton.setStyleSheet(cssify("Big"))
+        OptionHLayout.addWidget(PrintOptionButton)
 
         logger.debug("Control page loaded")
         return MainContainer
@@ -157,7 +163,6 @@ class ControlPage:
             self.PhotoButton.setStyleSheet(cssify("Big Blue"))
 
             logger.info("Preview resumed")
-
 
     def photoButtonCallback(self) -> None:
         """

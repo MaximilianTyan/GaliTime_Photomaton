@@ -18,6 +18,7 @@ from .controlpages.startpage import StartPage
 from .controlpages.optionspage import OptionsPage
 from .controlpages.controlpage import ControlPage
 from .controlpages.camerapage import CameraPage
+from .controlpages.printerpage import PrinterPage
 from .managers.eventmanager import EventManager
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ class ControlWindow(QMainWindow):
             "options": OptionsPage,
             "control": ControlPage,
             "camera": CameraPage,
+            "printer": PrinterPage,
         }
         self.currentPage = object.__new__(pagesDict[page])
         self.currentPage.__init__(self, *args, **kwargs)

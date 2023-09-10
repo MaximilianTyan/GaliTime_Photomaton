@@ -218,8 +218,8 @@ class CameraPage:
         propertiesDict = {
             "Capacités": self.camera.getAbilities(),
             "Configration": self.camera.getConfig(),
-            "À propos" : self.camera.getAbout(),
-            "Sommaire" : self.camera.getSummary(),
+            "À propos": self.camera.getAbout(),
+            "Sommaire": self.camera.getSummary(),
         }
         displayStr = ""
         for name, obj in propertiesDict.items():

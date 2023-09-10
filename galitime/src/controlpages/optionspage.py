@@ -172,7 +172,7 @@ class OptionsPage:
             self.mainWindow, caption="Dossier d'enregistrement"
         )
         saveFolderPath = parentFolderPath + "/" + self.tempEventInfo["eventName"] + "/"
-        self._svalidateParentFolder(saveFolderPath)
+        self._validateParentFolder(saveFolderPath)
 
     def chooseDecorFileButtonCall(self) -> None:
         """

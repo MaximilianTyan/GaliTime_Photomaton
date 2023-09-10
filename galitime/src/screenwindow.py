@@ -12,7 +12,7 @@ import atexit
 
 from PyQt5.QtWidgets import QMainWindow, QLabel
 from PyQt5.QtGui import QPixmap, QPainter
-from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import QShortcut, QApplication
 from PyQt5.QtCore import Qt, QTimer
 
 from .peripherals.camera import CameraWrapper
@@ -120,6 +120,7 @@ class ScreenWindow(QMainWindow):
         self.Screen = QLabel("")
         self.Screen.setAlignment(Qt.AlignCenter)
         self.Screen.setMaximumSize(1920, 1080)
+
         self.Screen.setPixmap(self.defaultImage)
 
         self.Screen.setScaledContents(True)
