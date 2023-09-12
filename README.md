@@ -45,9 +45,10 @@ Les panneaux LED sont connectés au secteur par l'intermediaire de blocs d'alime
 
 La version 3 du logiciel vise à remplacer le précédent logiciel en PHP par une version plus légère et rapide ecrite en Python, ne dépendant pas d'un navigateur Web.
 
-Cette version 3 utilise principalement 2 librairies python extérieures pour ses opérations:
--`PyQt5` pour le GUI
+Cette version 3 utilise principalement 3 librairies python extérieures pour ses opérations:
+-`PyQt5` pour le GUI (si problème de license, passer sous PySide, 99.9% identique)
 -`gphoto2` pour le contrôle de la caméra
+-`pycups` pour la gestion de l'imprimante
 
 Le code est reparti en plusieurs classes pour faciliter le développement et isoler les rôles de chaque classe.
 

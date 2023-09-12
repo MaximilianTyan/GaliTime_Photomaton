@@ -9,7 +9,8 @@ Module managing the printer page
 import logging
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
-from PyQt5.QtWidgets import QLabel, QComboBox, QHeaderView
+from PyQt5.QtWidgets import QLabel, QPushButton, QComboBox
+from PyQt5.QtWidgets import QHeaderView
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 
 from PyQt5.QtCore import Qt
@@ -19,6 +20,7 @@ from ..peripherals.printer import ImagePrinter, PrinterError
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
+SELECTED_STR = " (sélectionnée)"
 
 class PrinterPage:
     """
@@ -51,17 +53,17 @@ class PrinterPage:
         CurrentPrinterHLayout = QHBoxLayout()
         MainVLayout.addLayout(CurrentPrinterHLayout)
 
-        # 1.1 Printer label
-        CurrentPrinterLabel = QLabel("Imprimante sélectionnée")
-        CurrentPrinterLabel.setAlignment(Qt.AlignCenter)
-        CurrentPrinterLabel.setStyleSheet("font-size: 30px")
-        CurrentPrinterHLayout.addWidget(CurrentPrinterLabel)
-
-        # 1.2 Choice box listing items
+        # 1.1 Choice box listing items
         self.PrinterChoiceBox = QComboBox()
         self.updatePrintersList()
         self.PrinterChoiceBox.currentIndexChanged.connect(self.updatePrinterOptions)
         CurrentPrinterHLayout.addWidget(self.PrinterChoiceBox)
+
+        # 1.2 Printer Choice & Choice layout
+        SetPrinterButton = QPushButton("Sélectionner")
+        SetPrinterButton.clicked.connect(self.setPrinter)
+        SetPrinterButton.setStyleSheet("max-width: 200px")
+        CurrentPrinterHLayout.addWidget(SetPrinterButton)
 
         # 2. Two columns layout
         TwoColumnsHLayout = QHBoxLayout()
@@ -72,10 +74,10 @@ class PrinterPage:
         TwoColumnsHLayout.addLayout(PrinterOptionsVLayout)
 
         # 2.1.1 Printer Options Label
-        PrinterOptionsLabel = QLabel("Printer options")
+        PrinterOptionsLabel = QLabel("Options d'impression")
         PrinterOptionsLabel.setAlignment(Qt.AlignCenter)
         PrinterOptionsLabel.setStyleSheet("font-size: 30px")
-        PrinterOptionsVLayout.addWidget(CurrentPrinterLabel)
+        PrinterOptionsVLayout.addWidget(PrinterOptionsLabel)
 
         # 2.1.2 Printer Options Table
         self.PrinterOptionsTable = QTableWidget()
@@ -113,10 +115,13 @@ class PrinterPage:
         """
         printerList = ImagePrinter.listPrinters()
 
+        self.PrinterChoiceBox.clear()
         if printerList is None or len(printerList) == 0:
             self.PrinterChoiceBox.addItem("None")
 
         for printerName in printerList:
+            if printerName == ImagePrinter.printerName:
+                printerName += SELECTED_STR
             self.PrinterChoiceBox.addItem(str(printerName))
 
     def updatePrinterOptions(self) -> None:
@@ -125,7 +130,7 @@ class PrinterPage:
         """
         try:
             printerOptions = ImagePrinter.getPrinterOptions(
-                self.PrinterChoiceBox.currentText()
+                self.PrinterChoiceBox.currentText().rstrip(SELECTED_STR)
             )
         except PrinterError:
             printerOptions = {}
@@ -139,6 +144,7 @@ class PrinterPage:
 
         self.PrinterOptionsTable.setHorizontalHeaderLabels(["Option", "Valeur"])
         for row, (name, value) in enumerate(printerOptions.items()):
+            
             optionEntry = QTableWidgetItem(name)
             self.PrinterOptionsTable.setItem(row, 0, optionEntry)
 
@@ -163,3 +169,10 @@ class PrinterPage:
 
             optionValueEntry = QTableWidgetItem(value)
             self.PrinterJobsTable.setItem(row, 1, optionValueEntry)
+
+    def setPrinter(self) -> None:
+        """
+        selfPrinter : Sets the selected printer as the used printer
+        """
+        ImagePrinter.setPrinter(self.PrinterChoiceBox.currentText().rstrip(SELECTED_STR))
+        self.updatePrintersList()

@@ -123,19 +123,19 @@ class ControlPage:
         # 6.1 Options button
         OptionButton = QPushButton("Options")
         OptionButton.clicked.connect(lambda: self.mainWindow.loadPage("options"))
-        OptionButton.setStyleSheet(cssify("Big"))
+        OptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(OptionButton)
 
         # 6.2 Camera options button
         CamOptionButton = QPushButton("Caméra")
         CamOptionButton.clicked.connect(lambda: self.mainWindow.loadPage("camera"))
-        CamOptionButton.setStyleSheet(cssify("Big"))
+        CamOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(CamOptionButton)
 
         # 6.3 Printer options button
         PrintOptionButton = QPushButton("Imprimante")
         PrintOptionButton.clicked.connect(lambda: self.mainWindow.loadPage("printer"))
-        PrintOptionButton.setStyleSheet(cssify("Big"))
+        PrintOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(PrintOptionButton)
 
         logger.debug("Control page loaded")

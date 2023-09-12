@@ -44,6 +44,19 @@ class ImagePrinter:
     printerName = PRINTER
 
     @classmethod
+    def setPrinter(cls, printerName: str):
+        """
+        setPrinter : Changes the selected printer for the print actions
+
+        Raises:
+            PrinterError: If the printer name doesn't match any available printers
+        """
+        if not printerName in cls.listPrinters():
+            raise PrinterError("Printer not found")
+        logger.info("Changing printer name to %s", printerName)
+        cls.printerName = printerName
+
+    @classmethod
     def printImage(cls, filepath: str) -> None:
         """
         printImage : Prints file with the printer defined in constants.py using 'lpr' command and CUPS with GutenPrint 5.3.4 drivers.
