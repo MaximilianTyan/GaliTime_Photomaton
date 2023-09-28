@@ -78,8 +78,10 @@ class ControlWindow(QMainWindow):
         toggleFullscreen : Toggles fullscreen/windowed view
         """
         if self.isFullScreen():
+            logger.debug("Toggling Fullscreen OFF")
             self.showNormal()
         else:
+            logger.debug("Toggling Fullscreen ON")
             self.showFullScreen()
 
     def closeEvent(self, event) -> None:
@@ -90,5 +92,6 @@ class ControlWindow(QMainWindow):
         Args:
             event (Qt Event): Close event
         """
+        logger.info("Control window closed, closing screen window")
         ScreenWindow.getScreen().close()
         event.accept()

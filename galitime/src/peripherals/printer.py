@@ -51,8 +51,8 @@ class ImagePrinter:
         Raises:
             PrinterError: If the printer name doesn't match any available printers
         """
-        if not printerName in cls.listPrinters():
-            raise PrinterError("Printer not found")
+        if printerName not in cls.listPrinters():
+            raise PrinterError("Printer %s not found", printerName)
         logger.info("Changing printer name to %s", printerName)
         cls.printerName = printerName
 
@@ -60,15 +60,23 @@ class ImagePrinter:
     def printImage(cls, filepath: str) -> None:
         """
         printImage : Prints file with the printer defined in constants.py using 'lpr' command and CUPS with GutenPrint 5.3.4 drivers.
-        Raises an Exception if the process returns a non zero error code.
 
         Args:
             filepath (str): Filepath of the image to print
+
+        Raises:
+            FileNotFoundError: Filepath wasn't found
         """
         if filepath is None or len(filepath) == 0:
             raise FileNotFoundError("Image filepath is empty")
 
-        cls.clearJobs()
+        if os.path.exists(filepath):
+            raise FileNotFoundError("Image file not found")
+
+        try:
+            cls.clearJobs()
+        except PrinterError as err:
+            logger.warning("A printer error has occured: %s", err)
 
         with Connection() as cupsCon:
             cupsCon.printFile(
@@ -106,6 +114,7 @@ class ImagePrinter:
 
         with Connection() as cupsCon:
             jobsDict = cupsCon.getJobs()
+
         logger.debug("Fetched jobs: %d", len(jobsDict))
         return jobsDict
 
@@ -113,9 +122,17 @@ class ImagePrinter:
     def clearJobs(cls) -> None:
         """
         clearJobs : Clears all current jobs using pycups
+
+        Raises:
+            PrinterError: If the selected printer doesn't match any available printers name
         """
+        logger.debug("Clearing all jobs for printer %s", cls.printerName)
+
+        if cls.printerName not in cls.listPrinters():
+            raise PrinterError("Printer %s not found", cls.printerName)
+
         with Connection() as cupsCon:
-            cupsCon.cancelAllJobs()
+            cupsCon.cancelAllJobs(cls.printerName)
 
         logger.info("All printing jobs cleared")
 
@@ -138,7 +155,7 @@ class ImagePrinter:
         logger.info("Querying options for printer %s", printerName)
 
         if printerName not in cls.listPrinters():
-            raise PrinterError("Printer not found")
+            raise PrinterError("Printer %s not found", cls.printerName)
 
         stdoutput = subprocess.check_output(
             ["lpoptions", "-p", printerName, "-l"]

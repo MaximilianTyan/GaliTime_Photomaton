@@ -11,6 +11,7 @@ import inspect
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QPushButton, QComboBox, QTextEdit
+from PyQt5.QtCore import Qt
 
 from ..utilities.stylesheet import cssify
 from ..peripherals.camera import CameraWrapper
@@ -44,9 +45,12 @@ class CameraPage:
         Returns:
             PyQt5.QtWidget: Camera page loaded layout
         """
-        logger.debug("Loading camera options page")
         MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
+        MainVLayout.setContentsMargins(
+            self.mainWindow.width() // 10, 0, self.mainWindow.width() // 10, 0
+        )
+        MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
         # 2 Available cameras Layout
@@ -101,6 +105,7 @@ class CameraPage:
         reconnectCamera : Tries to reconnect gphoto2.Camera to the camera
         peripheral and updates the camera status.
         """
+        logger.info("Reconnecting camera")
         # self.cam.__init__()
         self.camera.connect()
         self.updateReconnectButton()
@@ -128,7 +133,10 @@ class CameraPage:
 
         if len(camList) == 0 or camList is None:
             self.CamsChoiceBox.addItem("None")
+            logger.warn("No camera detected")
             return
+
+        logger.debug("Updating camera list with %d entries", len(camList))
 
         for cam in camList:
             for i in cam:

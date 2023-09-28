@@ -34,7 +34,7 @@ class EmailManager:
     """emailManager : Class responsible for managing mail storage and access"""
 
     emailFolder = None
-    mailSession = None
+    mailSession: smtplib.SMTP = None
 
     @classmethod
     def setEmailFolder(cls, folderpath: str) -> None:
@@ -97,7 +97,7 @@ class EmailManager:
         }
         cls._writeEmailInfo(mail, mailDict)
 
-        logger.info("New email folder created: %s", mail)
+        logger.info("New email folder created for email %s", mail)
 
         return mailPath
 
@@ -141,8 +141,6 @@ class EmailManager:
         Input.prompt(cls.getEmailList())
         mailList = Input.getSelectedMails()
 
-        logger.info("Adding photo to %s mail folders", ", ".join(mailList))
-
         for mail in mailList:
             mailPath = cls.getMail(mail)
             if len(mailPath) == 0:
@@ -157,6 +155,8 @@ class EmailManager:
             mailDict = cls._readEmailInfo(mail)
             mailDict["photoNumber"] += 1
             cls._writeEmailInfo(mail, mailDict)
+
+        logger.info("Added photo to %s mail folders", repr(mailList))
 
         # cls.sendViaMail(mailList, photoPath)
 
@@ -261,7 +261,7 @@ class EmailManager:
         logger.info("Sending %u emails containing photos", len(mailFolderList))
 
         cls.connectToMailServer()
-
+        mailsStatuses = []
         for emailFolder in mailFolderList:
             with open(emailFolder + EMAIL_INFO_FILE, "rt", encoding=ENCODING) as info:
                 emailAddress = info.read().strip()
@@ -271,8 +271,17 @@ class EmailManager:
 
             message = cls.createMailMessage(emailAddress, imagePathList)
 
-            _status = cls.mailSession.send_message(message)
+            errorsDict = cls.mailSession.send_message(message)
+            if len(errorsDict):
+                mailsStatuses.append(errorsDict)
 
-        logger.info("All mails have been sent")
+        if not mailsStatuses:
+            logger.info("All mails have been sent")
+        else:
+            logger.warning(
+                "%d Email send errors occured:\n%s",
+                len(mailsStatuses),
+                "\n".join(mailsStatuses),
+            )
 
         cls.closeConnection()

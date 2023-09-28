@@ -67,10 +67,12 @@ class ControlPage:
         Returns:
             PyQt5.QtWidget: Control page loaded layout
         """
-        logger.debug("Loading control page")
         # Main layout, vertical, contains Everything
         MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
+        MainVLayout.setContentsMargins(
+            self.mainWindow.width() // 10, 0, self.mainWindow.width() // 10, 0
+        )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
@@ -224,6 +226,7 @@ class ControlPage:
         Returns:
             str: Full photo file path with name
         """
+        logger.info("Taking photo")
         photoFolder = PhotoManager().getPhotoFolder()
 
         self.screenWindow.stopPreview()
@@ -249,11 +252,15 @@ class ControlPage:
 
         logger.info("Printing file %s", self.currentPhotoFullFilePath)
 
+        try:
+            ImagePrinter.printImage(self.currentPhotoFullFilePath)
+        except FileNotFoundError as err:
+            logger.error("Printer error: %s", err)
+            return
+
         self.progressDialog = QProgressDialog("Printing photo...", "Close", 0, 100)
         self.progressDialog.canceled.connect(self.stopPrinterTimer)
         # self.progressDialog.setAutoClose(True)
-
-        ImagePrinter.printImage(self.currentPhotoFullFilePath)
 
         self.startPrintTimer()
 
@@ -261,9 +268,9 @@ class ControlPage:
         """
         startPrintTimer : Displays a progress bar indicating the remaining time for the photo
         """
-        logger.info("Printer timer started")
         self.printerTimer.ticksPassed = 0
         self.printerTimer.start(int(PRINT_TIME / 100))
+        logger.info("Printer timer started")
 
         self.PrintButton.setEnabled(False)
         self.PrintButton.setStyleSheet(cssify("Big Disabled"))

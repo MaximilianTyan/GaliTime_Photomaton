@@ -35,6 +35,7 @@ class EventManager:
     eventName = ""
     eventDate = ""
     photoNumber = 0
+    eventOpened = False
 
     parent = None
 
@@ -84,6 +85,16 @@ class EventManager:
         cls.eventDate = eventDate
 
     @classmethod
+    def setEventOpened(cls, eventOpened: bool) -> None:
+        """
+        setEventOpened : Sets the event opened variable to mark event as opened
+
+        Args:
+            eventOpened (bool): Event state
+        """
+        cls.eventOpened = eventOpened
+
+    @classmethod
     def incrementPhotoNumber(cls, increment: int = 1) -> None:
         """
         incrementPhotoNumber : Increments the photo number by the given value
@@ -114,6 +125,13 @@ class EventManager:
         """
         return cls.eventDate
 
+    @classmethod
+    def isEventOpened(cls) -> bool:
+        """
+        isEventOpened : returns true if the event is opened, false otherwise
+        """
+        return cls.eventOpened
+
     @staticmethod
     def createFolderScructure(saveFolder: str) -> None:
         """
@@ -122,12 +140,16 @@ class EventManager:
         Args:
             saveFolder (str): folder path in witch the event file structure will be created
         """
+        logger.debug("Creating new event folder structure in folder %s", saveFolder)
         os.mkdir(saveFolder)
         os.mkdir(saveFolder + "raw_photos")
         os.mkdir(saveFolder + "emails")
 
         EmailManager.setEmailFolder(saveFolder + "emails")
         PhotoManager.setPhotoFolder(saveFolder + "raw_photos")
+        logger.info(
+            "Successfully created new event folder structure in folder %s", saveFolder
+        )
 
     @classmethod
     def updateInfoFile(cls) -> None:
@@ -141,6 +163,7 @@ class EventManager:
             "emailNumber": EmailManager.getEmailNumber(),
         }
         cls._writeInfoFile(infoDict)
+        logger.debug("Event info file updated")
 
     @classmethod
     def _writeInfoFile(cls, infodict: dict) -> None:
@@ -177,6 +200,8 @@ class EventManager:
         if not saveFolder.endswith("/"):
             saveFolder += "/"
 
+        logger.debug("Attempting to create new event folder at %s", saveFolder)
+
         name = os.path.dirname(saveFolder)
         path = os.path.basename(saveFolder)
 
@@ -191,10 +216,12 @@ class EventManager:
                 if yesNoButton != QMessageBox.Yes:
                     return
 
+            logger.info("Removing pre-existing folder %s and it's contents", saveFolder)
             shutil.rmtree(saveFolder)
 
         cls.createFolderScructure(saveFolder)
         cls.updateInfoFile()
+        logger.info("Created new event folder at %s", saveFolder)
 
     @classmethod
     def loadSaveFolder(cls, folder: str = None) -> bool:

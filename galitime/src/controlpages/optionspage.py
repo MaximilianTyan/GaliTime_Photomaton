@@ -7,6 +7,7 @@ Module to handle the event options page
 """
 
 import logging
+import os.path
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QFileDialog
@@ -23,6 +24,9 @@ from ..utilities.constants import DATE_FORMAT
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
+
+INPUT_GREEN = "background-color: rgb(150, 250, 150);"
+INPUT_RED = "background-color: rgb(250, 150, 150);"
 
 
 class OptionsPage:
@@ -42,13 +46,12 @@ class OptionsPage:
 
         self.EventInput = None
         self.EventDateInput = None
-        self.saveFolderPathLabel = None
-        self.DecorFileLabel = None
+        self.SaveFolderPathInput = None
+        self.DecorFileInput = None
         self.errorLabel = None
+        self.ExitButton = None
 
         self.screenWindow = ScreenWindow.getScreen()
-
-        self.eventOpened = False
         self.createEvent = createEvent
 
     def load(self):
@@ -58,12 +61,13 @@ class OptionsPage:
         Returns:
             PyQt5.QtWidget: Option page loaded layout
         """
-        logger.debug("Loading options page")
         # Main layout, vertical, contains Title, Button Layout
         MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
-        MainVLayout.setAlignment(Qt.AlignVCenter)
-
+        MainVLayout.setContentsMargins(
+            self.mainWindow.width() // 10, 0, self.mainWindow.width() // 10, 0
+        )
+        MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
         # 1. Label "GaliTime Options"
@@ -76,58 +80,80 @@ class OptionsPage:
         OptionsGridLayout = QGridLayout()
         MainVLayout.addLayout(OptionsGridLayout)
 
-        # 2.1 Line Edit
+        # 2.1 Label
+        EventInputLabel = QLabel("Nom de l'événement")
+        OptionsGridLayout.addWidget(EventInputLabel, 1, 1)
+
+        # 2.2 Line Edit
         self.EventInput = QLineEdit(EventManager.getEventName())
         self.EventInput.setPlaceholderText("Nom de l'événement")
-        self.EventInput.setAlignment(Qt.AlignCenter)
-        OptionsGridLayout.addWidget(self.EventInput, 1, 1)
+        self.EventInput.setAlignment(Qt.AlignLeft)
+        self.EventInput.textEdited.connect(
+            lambda: self.EventInput.setStyleSheet(cssify("white"))
+        )
+        OptionsGridLayout.addWidget(self.EventInput, 1, 2)
 
-        # 2.2 Validate Button
+        # 2.3 Validate Button
         ValidateNameButton = QPushButton("Valider")
         ValidateNameButton.clicked.connect(self.changeEventName)
         # ValidateNameButton.setStyleSheet(cssify("Big Flat"))
-        OptionsGridLayout.addWidget(ValidateNameButton, 1, 2)
+        OptionsGridLayout.addWidget(ValidateNameButton, 1, 3)
 
-        # 3.1 Date
-        self.EventDateInput = QDateEdit(QDate.currentDate())
-        self.EventDateInput.setDisplayFormat(DATE_FORMAT)
-        self.EventDateInput.setAlignment(Qt.AlignCenter)
-        self.EventDateInput.setButtonSymbols(QAbstractSpinBox.NoButtons)
-        OptionsGridLayout.addWidget(self.EventDateInput, 2, 1)
+        # 3.1 Date Label
+        EventInputLabel = QLabel("Date de l'événement")
+        OptionsGridLayout.addWidget(EventInputLabel, 2, 1)
 
         # 3.2 Date
+        self.EventDateInput = QDateEdit(QDate.currentDate())
+        self.EventDateInput.setDisplayFormat(DATE_FORMAT)
+        self.EventDateInput.setAlignment(Qt.AlignLeft)
+        self.EventDateInput.dateTimeChanged.connect(
+            lambda *_: self.EventDateInput.setStyleSheet(cssify("white"))
+        )
+        self.EventDateInput.setButtonSymbols(QAbstractSpinBox.NoButtons)
+        OptionsGridLayout.addWidget(self.EventDateInput, 2, 2)
+
+        # 3.3 Date
         ValidateDateButton = QPushButton("Valider")
         ValidateDateButton.clicked.connect(self.changeEventDate)
         # ValidateDateButton.setStyleSheet(cssify("Big Flat"))
-        OptionsGridLayout.addWidget(ValidateDateButton, 2, 2)
+        OptionsGridLayout.addWidget(ValidateDateButton, 2, 3)
 
-        # 4.1 saveFolderPath label
-        self.saveFolderPathLabel = QLabel(
-            "Dossier d'enregistrement:\n" + str(EventManager.getEventFolder())
+        # 4.1 Save folder Label
+        EventInputLabel = QLabel("Dossier d'enregistrement")
+        OptionsGridLayout.addWidget(EventInputLabel, 3, 1)
+
+        # 4.2 Save folder input
+        self.SaveFolderPathInput = QLineEdit(EventManager.getEventFolder())
+        self.SaveFolderPathInput.setAlignment(Qt.AlignLeft)
+        self.SaveFolderPathInput.textEdited.connect(
+            lambda: self.SaveFolderPathInput.setStyleSheet(cssify("white"))
         )
-        self.saveFolderPathLabel.setAlignment(Qt.AlignCenter)
-        self.saveFolderPathLabel.setWordWrap(True)
-        OptionsGridLayout.addWidget(self.saveFolderPathLabel, 3, 1)
+        OptionsGridLayout.addWidget(self.SaveFolderPathInput, 3, 2)
 
-        # 4.2 Browe button
+        # 4.3 Browe button
         BrowseButton = QPushButton("Parcourir")
         BrowseButton.clicked.connect(self.chooseSaveFolderButtonCall)
         # BrowseButton.setStyleSheet(cssify("Big Flat"))
-        OptionsGridLayout.addWidget(BrowseButton, 3, 2)
+        OptionsGridLayout.addWidget(BrowseButton, 3, 3)
 
-        # 5.1 Decorfile label
-        self.DecorFileLabel = QLabel(
-            "Image de Décoration:\n" + str(self.screenWindow.getDecorFile())
+        # 5.1 Decor Image Label
+        EventInputLabel = QLabel("Image de décoration")
+        OptionsGridLayout.addWidget(EventInputLabel, 4, 1)
+
+        # 5.2 Decor Image input
+        self.DecorFileInput = QLineEdit(str(self.screenWindow.getDecorFile()))
+        self.DecorFileInput.setAlignment(Qt.AlignLeft)
+        self.DecorFileInput.textEdited.connect(
+            lambda: self.DecorFileInput.setStyleSheet(cssify("white"))
         )
-        self.DecorFileLabel.setAlignment(Qt.AlignCenter)
-        self.saveFolderPathLabel.setWordWrap(True)
-        OptionsGridLayout.addWidget(self.DecorFileLabel, 4, 1)
+        OptionsGridLayout.addWidget(self.DecorFileInput, 4, 2)
 
         # 5.2 Browe button
         BrowseButton2 = QPushButton("Choisir")
         BrowseButton2.clicked.connect(self.chooseDecorFileButtonCall)
         # BrowseButton2.setStyleSheet(cssify("Big Flat"))
-        OptionsGridLayout.addWidget(BrowseButton2, 4, 2)
+        OptionsGridLayout.addWidget(BrowseButton2, 4, 3)
 
         # 6 Error Label
         self.errorLabel = QLabel()
@@ -141,15 +167,23 @@ class OptionsPage:
 
         # 7.1 Save Button
         SaveButton = QPushButton("Enregistrer")
-        SaveButton.setStyleSheet(cssify("Big"))
+        SaveButton.setStyleSheet(cssify("Tall Green"))
         SaveButton.clicked.connect(self.controlPageCheck)
         ExitButtonsLayout.addWidget(SaveButton)
 
-        # 7.1 Cancel Button
+        # 7.2 Cancel Button
         CancelButton = QPushButton("Annuler")
-        CancelButton.setStyleSheet(cssify("Big Red"))
+        CancelButton.setStyleSheet(cssify("Tall Red"))
         CancelButton.clicked.connect(self.cancelOptions)
         ExitButtonsLayout.addWidget(CancelButton)
+
+        if EventManager.isEventOpened():
+            # 7.3 Exit button
+            self.ExitButton = QPushButton("Quitter")
+            self.ExitButton.clicked.connect(self.exitEvent)
+            self.ExitButton.setStyleSheet(cssify("Tall"))
+            self.ExitButton.setEnabled(True)
+            ExitButtonsLayout.addWidget(self.ExitButton)
 
         TitleLabel.setFocus()
 
@@ -185,12 +219,26 @@ class OptionsPage:
         self._validateDecorFile(selectedFilename)
 
     def _validateParentFolder(self, saveFolderPath: str) -> None:
+        self.SaveFolderPathInput.setText(saveFolderPath)
+
+        if not os.path.exists(saveFolderPath):
+            self.SaveFolderPathInput.setStyleSheet(INPUT_RED)
+            self.tempEventInfo["saveFolder"] = None
+            return
+
+        self.SaveFolderPathInput.setStyleSheet(INPUT_GREEN)
         self.tempEventInfo["saveFolder"] = saveFolderPath
-        self.saveFolderPathLabel.setText("Dossier d'enregistrement:\n" + saveFolderPath)
 
     def _validateDecorFile(self, decorFilePath: str) -> None:
+        self.DecorFileInput.setText(decorFilePath)
+
+        if not os.path.exists(decorFilePath):
+            self.DecorFileInput.setStyleSheet(INPUT_RED)
+            self.tempEventInfo["decorFile"] = None
+            return
+
         self.tempEventInfo["decorFile"] = decorFilePath
-        self.DecorFileLabel.setText("Image de décor:\n" + decorFilePath)
+        self.DecorFileInput.setStyleSheet(INPUT_GREEN)
 
     def changeEventName(self) -> None:
         """
@@ -199,10 +247,10 @@ class OptionsPage:
         """
         if self.EventInput.text().strip() != "":
             self.tempEventInfo["eventName"] = self.EventInput.text()
-
-            self.EventInput.setStyleSheet(cssify("green"))
+            self.EventInput.setStyleSheet(INPUT_GREEN)
         else:
-            self.EventInput.setStyleSheet(cssify("red"))
+            self.tempEventInfo["eventName"] = None
+            self.EventInput.setStyleSheet(INPUT_RED)
 
     def changeEventDate(self) -> None:
         """
@@ -212,10 +260,10 @@ class OptionsPage:
         date = self.EventDateInput.date()
         if date.isValid():
             self.tempEventInfo["eventDate"] = date.toString(DATE_FORMAT)
-
-            self.EventDateInput.setStyleSheet(cssify("green"))
+            self.EventDateInput.setStyleSheet(INPUT_GREEN)
         else:
-            self.EventDateInput.setStyleSheet(cssify("red"))
+            self.tempEventInfo["eventDate"] = None
+            self.EventDateInput.setStyleSheet(INPUT_RED)
 
     # Page switch
 
@@ -228,26 +276,31 @@ class OptionsPage:
         checkDict = {
             "eventName": "Le nom de l'événement doit être validée",
             "eventDate": "La date de l'événement doit être validée",
-            "saveFolder": "Le dossier d'enregistrement doit être valide",
-            "decorFile": "Le fichier de décoration doit être valide",
+            "saveFolder": "Le dossier d'enregistrement doit exister",
+            "decorFile": "Le fichier de décoration doit exister",
         }
         for field, errorMsg in checkDict.items():
             if self.tempEventInfo[field] is None:
                 self.errorLabel.setText(errorMsg)
                 return
+        logger.debug(
+            "All fields checks passed, overwritting current values with fields values"
+        )
 
         EventManager.setEventName(self.tempEventInfo["eventName"])
         EventManager.setEventDate(self.tempEventInfo["eventDate"])
         EventManager.setEventFolder(self.tempEventInfo["saveFolder"])
         self.screenWindow.setDecorFile(self.tempEventInfo["decorFile"])
 
-        if self.createEvent:
+        if self.createEvent and not EventManager.isEventOpened():
             EventManager.initSaveFolder(EventManager.getEventFolder())
 
-        if not self.eventOpened:
+        if not EventManager.isEventOpened():
+            logger.debug("Opened event %s", EventManager.getEventName())
             self.screenWindow.startPreview()
-            self.eventOpened = True
+            EventManager.setEventOpened(True)
 
+        EventManager.updateInfoFile()
         self.mainWindow.loadPage("control")
 
     def cancelOptions(self) -> None:
@@ -255,7 +308,19 @@ class OptionsPage:
         cancelOptions : Return function for the option page, returns either to the
         control page if an event is opened, to start page otherwise
         """
-        if self.eventOpened:
+        if EventManager.isEventOpened():
             self.mainWindow.loadPage("control")
         else:
             self.mainWindow.loadPage("start")
+
+    def exitEvent(self) -> None:
+        """
+        exitEvent : Stops preview, closes current event and returns to start page
+        """
+
+        logger.info("Closing event")
+        if self.screenWindow.isPreviewing():
+            self.screenWindow.stopPreview()
+
+        EventManager.setEventOpened(False)
+        self.mainWindow.loadPage("start")

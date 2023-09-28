@@ -98,8 +98,13 @@ class CameraWrapper:
         """
         _clearGphoto : Clear all processes origiating from gphoto2 that may lock the camera.
         """
+        logger.debug("Clearing gphoto processes")
+        completedProcess = subprocess.run(["pkill", "gphoto2"], check=False)
 
-        subprocess.run(["pkill", "gphoto2"], check=False)
+        if completedProcess.returncode != 0:
+            logger.warn("Failed to clear gphoto processes")
+        else:
+            logger.debug("Successfully cleared gphoto processes")
 
         # clearedProcess = False
         # pythonPID = os.getpid()
@@ -123,6 +128,9 @@ class CameraWrapper:
 
     def _cleanMovieFile(self) -> None:
         filesize = os.path.getsize(MOVIE_PATH)
+        if filesize == 0:
+            return
+
         with open(MOVIE_PATH, "wt", encoding=ENCODING) as file:
             file.write("")
         logger.info("Cleared %s file (%u bytes)", MOVIE_PATH, filesize)
@@ -141,9 +149,11 @@ class CameraWrapper:
         """
         connect : Initiates connection to camera device
         """
+        logger.debug("Attempting to connect to Camera")
         self.connected = False
         self.cam.init()
         self.connected = True
+        logger.debug("Successfully connected to Camera")
 
     @promptError
     def listCams(self) -> tuple:
@@ -168,10 +178,14 @@ class CameraWrapper:
         Returns:
             str: full photo filepath
         """
+        logger.info("Capturing image...")
         photoPath = self.cam.capture(gp.GP_CAPTURE_IMAGE)
+        logger.debug("Image successfully captured")
+
         photoFile = self.cam.file_get(
             photoPath.folder, photoPath.name, gp.GP_FILE_TYPE_NORMAL
         )
+        logger.debug("Image successfully retrieved")
 
         timestamp = QDateTime.currentDateTime().toString(
             "dd:MM:yyyy_hh'h'MM'm'ss's'zzz"
@@ -179,6 +193,7 @@ class CameraWrapper:
         filepath = f"{saveFolder}/{timestamp}.jpeg"
 
         photoFile.save(filepath)
+        logger.info("Image successfully captured and saved")
         return filepath
 
     def readPreview(self) -> bytes:

@@ -35,10 +35,12 @@ class StartPage:
         Returns:
             PyQt5.QtWidget: Start page loaded layout
         """
-        logger.debug("Loading start page")
         # Main layout, vertical, contains Title, Button Layout
         MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
+        MainVLayout.setContentsMargins(
+            self.mainWindow.width() // 10, 0, self.mainWindow.width() // 10, 0
+        )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
@@ -72,6 +74,8 @@ class StartPage:
     def openEvent(self):
         if EventManager.loadSaveFolder():
             self.mainWindow.loadPage("options")
+        else:
+            logger.error("Could not load event folder")
 
     def createEvent(self):
         self.mainWindow.loadPage("options", createEvent=True)

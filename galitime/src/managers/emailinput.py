@@ -38,7 +38,6 @@ class EmailInput(QDialog):
         Args:
             emailList (list[str]): List of all given email addresses
         """
-        logging.debug("Opening email prompt")
 
         MainVLayout = QVBoxLayout()
         self.setWindowTitle("Email input")
@@ -89,7 +88,7 @@ class EmailInput(QDialog):
 
         self.setLayout(MainVLayout)
 
-        logging.debug("Email prompt opened")
+        logger.debug("Email prompt opened")
         super().exec()
 
     def _processInput(self) -> None:
@@ -104,7 +103,7 @@ class EmailInput(QDialog):
         print(self.ListView.selectedItems())
         self.emailList.remove(item.text())
 
-        logging.info("Removed email address %s from destinator list", item.text())
+        logger.info("Removed email address %s from destinator list", item.text())
 
     def addEmail(self, email: str) -> None:
         """
@@ -119,7 +118,7 @@ class EmailInput(QDialog):
 
         self.ListView.insertItem(0, EmailItem)
         self.emailList.append(_email)
-        logging.info("Added destinator %s", _email)
+        logger.info("Added destinator %s", _email)
 
     def getSelectedMails(self) -> list[str]:
         """

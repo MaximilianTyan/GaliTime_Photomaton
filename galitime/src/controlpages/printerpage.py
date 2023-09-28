@@ -16,11 +16,13 @@ from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import Qt
 
 from ..peripherals.printer import ImagePrinter, PrinterError
+from ..utilities.stylesheet import cssify
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
 SELECTED_STR = " (sélectionnée)"
+
 
 class PrinterPage:
     """
@@ -42,10 +44,12 @@ class PrinterPage:
         Returns:
             PyQt5.QtWidget: Printer page loaded layout
         """
-        logger.debug("Loading control page")
         # Main layout, vertical, contains Everything
         MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
+        MainVLayout.setContentsMargins(
+            self.mainWindow.width() // 10, 0, self.mainWindow.width() // 10, 0
+        )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
@@ -53,13 +57,19 @@ class PrinterPage:
         CurrentPrinterHLayout = QHBoxLayout()
         MainVLayout.addLayout(CurrentPrinterHLayout)
 
-        # 1.1 Choice box listing items
+        # 1.1 Cancel Button
+        CancelButton = QPushButton("Retour")
+        CancelButton.setStyleSheet(cssify("Red") + "max-width: 100px;")
+        CancelButton.clicked.connect(self.returnToControl)
+        CurrentPrinterHLayout.addWidget(CancelButton)
+
+        # 1.2 Choice box listing items
         self.PrinterChoiceBox = QComboBox()
         self.updatePrintersList()
         self.PrinterChoiceBox.currentIndexChanged.connect(self.updatePrinterOptions)
         CurrentPrinterHLayout.addWidget(self.PrinterChoiceBox)
 
-        # 1.2 Printer Choice & Choice layout
+        # 1.3 Printer Choice & Choice layout
         SetPrinterButton = QPushButton("Sélectionner")
         SetPrinterButton.clicked.connect(self.setPrinter)
         SetPrinterButton.setStyleSheet("max-width: 200px")
@@ -107,13 +117,23 @@ class PrinterPage:
         self.updatePrinterJobs()
         JobsVLayout.addWidget(self.PrinterJobsTable)
 
+        logger.debug("Printer page loaded")
+
         return MainContainer
+
+    def returnToControl(self) -> None:
+        """
+        returnToControl : Loads the control page
+        """
+        self.mainWindow.loadPage("control")
 
     def updatePrintersList(self) -> None:
         """
         updatePrintersList : Updates the PrinterChoiceBox widget with available printers
         """
         printerList = ImagePrinter.listPrinters()
+
+        logger.debug("Updating printer list with %d entries", len(printerList))
 
         self.PrinterChoiceBox.clear()
         if printerList is None or len(printerList) == 0:
@@ -144,7 +164,6 @@ class PrinterPage:
 
         self.PrinterOptionsTable.setHorizontalHeaderLabels(["Option", "Valeur"])
         for row, (name, value) in enumerate(printerOptions.items()):
-            
             optionEntry = QTableWidgetItem(name)
             self.PrinterOptionsTable.setItem(row, 0, optionEntry)
 
@@ -174,5 +193,8 @@ class PrinterPage:
         """
         selfPrinter : Sets the selected printer as the used printer
         """
-        ImagePrinter.setPrinter(self.PrinterChoiceBox.currentText().rstrip(SELECTED_STR))
+        printerName = self.PrinterChoiceBox.currentText().rstrip(SELECTED_STR)
+
+        logger.info("Settng current printer to %s", printerName)
+        ImagePrinter.setPrinter(printerName)
         self.updatePrintersList()
