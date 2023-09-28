@@ -71,7 +71,10 @@ class ControlPage:
         MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
         MainVLayout.setContentsMargins(
-            self.mainWindow.width() // 10, 0, self.mainWindow.width() // 10, 0
+            self.mainWindow.width() // 10,
+            self.mainWindow.width() // 10,
+            self.mainWindow.width() // 10,
+            self.mainWindow.width() // 10,
         )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)

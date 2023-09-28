@@ -15,7 +15,7 @@ styles = {
     "TALL": "height: 50px; font-size: 20px;",
     "LARGE": "width: 300px; font-size: 20px;",
     "BIG": "height: 50px; width: 300px; font-size: 20px;",
-    "THIN": "max-width: 100px; font-size: 20px;",
+    "THIN": "max-width: 100px;",
 }
 
 

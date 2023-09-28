@@ -48,7 +48,10 @@ class PrinterPage:
         MainContainer = QWidget(self.mainWindow)
         MainVLayout = QVBoxLayout()
         MainVLayout.setContentsMargins(
-            self.mainWindow.width() // 10, 0, self.mainWindow.width() // 10, 0
+            self.mainWindow.width() // 10,
+            self.mainWindow.width() // 20,
+            self.mainWindow.width() // 10,
+            self.mainWindow.width() // 20,
         )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
@@ -59,7 +62,7 @@ class PrinterPage:
 
         # 1.1 Cancel Button
         CancelButton = QPushButton("Retour")
-        CancelButton.setStyleSheet(cssify("Red") + "max-width: 100px;")
+        CancelButton.setStyleSheet(cssify("Thin Red"))
         CancelButton.clicked.connect(self.returnToControl)
         CurrentPrinterHLayout.addWidget(CancelButton)
 
@@ -72,7 +75,7 @@ class PrinterPage:
         # 1.3 Printer Choice & Choice layout
         SetPrinterButton = QPushButton("Sélectionner")
         SetPrinterButton.clicked.connect(self.setPrinter)
-        SetPrinterButton.setStyleSheet("max-width: 200px")
+        SetPrinterButton.setStyleSheet("Thin")
         CurrentPrinterHLayout.addWidget(SetPrinterButton)
 
         # 2. Two columns layout
