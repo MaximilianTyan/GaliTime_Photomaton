@@ -19,6 +19,9 @@ logger.propagate = True
 
 
 class Connection(cups.Connection):
+    """
+    cups.Connection wrapper adding support for 'with' keyword
+    """
     def __enter__(self):
         return self
 
@@ -52,7 +55,7 @@ class ImagePrinter:
             PrinterError: If the printer name doesn't match any available printers
         """
         if printerName not in cls.listPrinters():
-            raise PrinterError("Printer %s not found", printerName)
+            raise PrinterError(f"Printer {printerName} not found")
         logger.info("Changing printer name to %s", printerName)
         cls.printerName = printerName
 
@@ -70,13 +73,13 @@ class ImagePrinter:
         if filepath is None or len(filepath) == 0:
             raise FileNotFoundError("Image filepath is empty")
 
-        if os.path.exists(filepath):
+        if not os.path.exists(filepath):
             raise FileNotFoundError("Image file not found")
 
         try:
             cls.clearJobs()
         except PrinterError as err:
-            logger.warning("A printer error has occured: %s", err)
+            logger.warning("A printer error has occured during job cleaning: %s", str(err))
 
         with Connection() as cupsCon:
             cupsCon.printFile(

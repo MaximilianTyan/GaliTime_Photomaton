@@ -9,6 +9,8 @@ Module implementing the control page
 import os
 import logging
 
+import cups
+
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QLabel, QPushButton, QProgressDialog
 from PyQt5.QtCore import Qt, QTimer
@@ -258,8 +260,12 @@ class ControlPage:
         try:
             ImagePrinter.printImage(self.currentPhotoFullFilePath)
         except FileNotFoundError as err:
-            logger.error("Printer error: %s", err)
+            logger.error("Printer error: %s", str(err))
             return
+        except cups.IPPError as err:
+            logger.error("CUPS error: %s", str(err))
+            return
+
 
         self.progressDialog = QProgressDialog("Printing photo...", "Close", 0, 100)
         self.progressDialog.canceled.connect(self.stopPrinterTimer)

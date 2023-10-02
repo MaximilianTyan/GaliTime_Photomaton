@@ -9,7 +9,7 @@ Module defining cross file constants
 # General
 ENCODING = "utf-8"
 DATE_FORMAT = "yyyy-MM-dd"
-LOGGER_FORMAT = "%(asctime)s [%(levelname)s] (%(module)s) %(lineno)d : %(message)s"
+LOGGER_FORMAT = "%(asctime)s [%(levelname)7s] (%(module)13s) %(lineno)3d : %(message)s"
 
 # Files
 LOG_FOLDER = "galitime/logs/"
