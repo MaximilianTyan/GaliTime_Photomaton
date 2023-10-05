@@ -31,9 +31,9 @@ source env/bin/activate
 
 # -----------------------------------
 echo "Installing python packages ..."
-python3 pip install gphoto2
-python3 pip install pyqt5 
-python3 pip install pycups
+python3 -m pip install gphoto2
+python3 -m pip install pyqt5 
+python3 -m pip install pycups
 
 deactivate
 
