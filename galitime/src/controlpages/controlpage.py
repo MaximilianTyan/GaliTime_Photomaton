@@ -6,38 +6,41 @@
 Module implementing the control page
 """
 
-import os
 import logging
+import os
 
 import cups
-
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QLabel, QPushButton, QProgressDialog
 from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QLabel, QProgressDialog, QPushButton
 
-from ..managers.eventmanager import EventManager
+from ..abstractcontrolwindow import AbstractControlWindow
+from ..controlpages.abstractpage import AbstractPage
+from ..controlpages.pagesenum import PageEnum
 from ..managers.emailmanager import EmailManager
+from ..managers.eventmanager import EventManager
 from ..managers.photomanager import PhotoManager
-
-from ..screenwindow import ScreenWindow
-
 from ..peripherals.camera import CameraWrapper
 from ..peripherals.printer import ImagePrinter
-
-from ..utilities.stylesheet import cssify
+from ..screenwindow import ScreenWindow
 from ..utilities.constants import DEFAULT_PHOTO, TEMP_PHOTO
 from ..utilities.constants import PRINT_TIME
+from ..utilities.stylesheet import cssify
 
+# ---------- LOGGER SETUP ----------
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-class ControlPage:
+# ----------------------------------
+
+
+class ControlPage(AbstractPage):
     """
     StartPage : Handles control page functionnality
     """
 
-    def __init__(self, mainWindow):
+    def __init__(self, mainWindow: AbstractControlWindow):
         self.mainWindow = mainWindow
 
         self.PhotoButton = None
@@ -46,10 +49,7 @@ class ControlPage:
         self.currentPhotoFullFilePath = os.path.abspath(DEFAULT_PHOTO)
 
         self.tempEventInfo = {
-            "saveFolder": None,
-            "decorFile": None,
-            "eventName": None,
-            "eventDate": None,
+            "saveFolder": None, "decorFile": None, "eventName": None, "eventDate": None,
         }
 
         self.screenWindow = ScreenWindow.getScreen()
@@ -76,8 +76,7 @@ class ControlPage:
             self.mainWindow.width() // 10,
             self.mainWindow.width() // 10,
             self.mainWindow.width() // 10,
-            self.mainWindow.width() // 10,
-        )
+            self.mainWindow.width() // 10, )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
@@ -129,21 +128,27 @@ class ControlPage:
 
         # 6.1 Options button
         OptionButton = QPushButton("Options")
-        OptionButton.clicked.connect(lambda: self.mainWindow.loadPage("options"))
+        OptionButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.OPTIONS))
         OptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(OptionButton)
 
         # 6.2 Camera options button
         CamOptionButton = QPushButton("Caméra")
-        CamOptionButton.clicked.connect(lambda: self.mainWindow.loadPage("camera"))
+        CamOptionButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.CAMERA))
         CamOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(CamOptionButton)
 
         # 6.3 Printer options button
         PrintOptionButton = QPushButton("Imprimante")
-        PrintOptionButton.clicked.connect(lambda: self.mainWindow.loadPage("printer"))
+        PrintOptionButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.PRINTER))
         PrintOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(PrintOptionButton)
+
+        # 6.4 Printer options button
+        EmailSenderButton = QPushButton("Emails")
+        EmailSenderButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.MAIL))
+        EmailSenderButton.setStyleSheet(cssify("Tall"))
+        OptionHLayout.addWidget(EmailSenderButton)
 
         logger.debug("Control page loaded")
         return MainContainer
@@ -265,7 +270,6 @@ class ControlPage:
         except cups.IPPError as err:
             logger.error("CUPS error: %s", str(err))
             return
-
 
         self.progressDialog = QProgressDialog("Printing photo...", "Close", 0, 100)
         self.progressDialog.canceled.connect(self.stopPrinterTimer)

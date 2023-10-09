@@ -6,25 +6,23 @@
 Module in charge of email handling
 """
 
+import atexit
+import configparser
+import datetime
+import email
+# Config & data files
+import json
+import logging
+import mimetypes
 # File manipulation
 import os
 import shutil
-
-# Config & data files
-import json
-import configparser
-
 # Email sending
 import smtplib
-import email
-import mimetypes
-import datetime
-
-import atexit
-import logging
 
 from .emailinput import EmailInput
-from ..utilities.constants import ENCODING, EMAIL_INFO_FILE, DATE_FORMAT
+from ..utilities.constants import DATE_FORMAT, EMAIL_INFO_FILE, ENCODING
+from ..utilities.constants import EMAIL_CONFIG_FILE, EMAIL_KEY_FILE
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -33,6 +31,7 @@ logger.propagate = True
 class EmailManager:
     """emailManager : Class responsible for managing mail storage and access"""
 
+    config = configparser.ConfigParser()
     emailFolder = None
     mailSession: smtplib.SMTP = None
 
@@ -92,8 +91,7 @@ class EmailManager:
         os.mkdir(mailPath)
 
         mailDict = {
-            "email": mail,
-            "photoNumber": 0,
+            "email": mail, "photoNumber": 0,
         }
         cls._writeEmailInfo(mail, mailDict)
 
@@ -117,9 +115,29 @@ class EmailManager:
         return mailPath
 
     @classmethod
+    def readConfig(cls) -> None:
+        """
+        Reads the EMAIL_CONFIG_FILE if it exists and updates the internal config parser object accordingly
+        """
+        if not os.path.exists(EMAIL_CONFIG_FILE):
+            logger.warning("Missing email server config file: %s", EMAIL_CONFIG_FILE)
+            return
+        cls.config.read(EMAIL_CONFIG_FILE)
+        logger.debug(f"Read {EMAIL_CONFIG_FILE} config file")
+
+    @classmethod
+    def getConfig(cls) -> configparser.ConfigParser:
+        """Returns the current mail configuration as a config parser.
+
+        Returns:
+            configparser.ConfigParser: Mail config parser
+        """
+        return cls.config
+
+    @classmethod
     def _readEmailInfo(cls, mail: str) -> dict:
         with open(
-            cls.emailFolder + mail + "/" + EMAIL_INFO_FILE, "rt", encoding=ENCODING
+                cls.emailFolder + mail + "/" + EMAIL_INFO_FILE, "rt", encoding=ENCODING
         ) as file:
             return json.load(file)
 
@@ -169,8 +187,7 @@ class EmailManager:
         Returns:
             smtplib.SMTP: COnnection session
         """
-        config = configparser.ConfigParser()
-        config.read("./email.cfg")
+        config = cls.getConfig()
 
         session = smtplib.SMTP(
             host=config["server"]["hostname"], port=config["server"]["port"]
@@ -182,16 +199,16 @@ class EmailManager:
         session.starttls()
 
         logger.info(
-            "Opening connection to mail server "
-            + config["server"]["hostname"]
-            + ":"
-            + config["server"]["hostname"]
+            "Opening connection to mail server " + config["server"]["hostname"] + ":" + config["server"]["hostname"]
         )
 
         # Loging in
         user = config["user"]["login"]
+
+        if not os.path.exists(EMAIL_KEY_FILE):
+            raise FileNotFoundError(f"No {EMAIL_KEY_FILE} file could be found for logging in")
         with open(
-            "./email.key", "rt", encoding=ENCODING
+                EMAIL_KEY_FILE, "rt", encoding=ENCODING
         ) as file:  # The filepath is hardcoded to avoid forgetting to add it in gitignore
             password = file.read().strip()
 
@@ -224,8 +241,7 @@ class EmailManager:
             email.message.EmailMessage : Mail object destined for emailAddress with images as attachements.
         """
 
-        config = configparser.ConfigParser()
-        config.read("./email.cfg")
+        config = cls.getConfig()
 
         # Email writing
         message = email.message.EmailMessage()
@@ -256,8 +272,13 @@ class EmailManager:
         cls.closeConnection()
 
     @classmethod
-    def sendAllPhotosToMails(cls) -> None:
-        mailFolderList = os.listdir(cls.getEmailFolder())
+    def sendPhotosToMails(cls, mailFolderList: list[str]) -> None:
+        """
+        Sends all photos in the email folder to relevant email
+
+        Args:
+            mailFolderList (list[str]): List of email to send named folders to
+        """
         logger.info("Sending %u emails containing photos", len(mailFolderList))
 
         cls.connectToMailServer()
@@ -279,9 +300,6 @@ class EmailManager:
             logger.info("All mails have been sent")
         else:
             logger.warning(
-                "%d Email send errors occured:\n%s",
-                len(mailsStatuses),
-                "\n".join(mailsStatuses),
-            )
+                "%d Email send errors occured:\n%s", len(mailsStatuses), "\n".join(mailsStatuses), )
 
         cls.closeConnection()

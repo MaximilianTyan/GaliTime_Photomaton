@@ -6,28 +6,36 @@
 Module managing the camera options page
 """
 
-import logging
 import inspect
+import logging
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QPushButton, QComboBox, QTextEdit
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QComboBox, QPushButton, QTextEdit
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from ..utilities.stylesheet import cssify
+from ..abstractcontrolwindow import AbstractControlWindow
+from ..controlpages.abstractpage import AbstractPage
+from ..controlpages.pagesenum import PageEnum
 from ..peripherals.camera import CameraWrapper
+from ..utilities.stylesheet import cssify
 
+# ---------- LOGGER SETUP ----------
 logger = logging.getLogger(__name__)
 logger.propagate = True
+# ----------------------------------
+
+CHOSEN_STRING = " sélectionnée"
 
 
-class CameraPage:
+class CameraPage(AbstractPage):
     """
-    StartPage : Handles camera page functionnality
+    StartPage : Handles camera page functionality
     """
 
-    def __init__(self, mainWindow) -> None:
+    def __init__(self, mainWindow: AbstractControlWindow) -> None:
+        self.PropertiesText: QTextEdit = None
         self.mainWindow = mainWindow
-        self.camera = CameraWrapper.getCamera()
+        self.camera: CameraWrapper = CameraWrapper.getCamera()
 
         self.ReconnectButton = None
 
@@ -38,7 +46,7 @@ class CameraPage:
         self.AboutText = None
         self.SummaryText = None
 
-    def load(self) -> None:
+    def load(self) -> QWidget:
         """
         load : Loads the camera page in a QWidget and returns it
 
@@ -51,8 +59,7 @@ class CameraPage:
             self.mainWindow.width() // 10,
             self.mainWindow.width() // 10,
             self.mainWindow.width() // 10,
-            self.mainWindow.width() // 10,
-        )
+            self.mainWindow.width() // 10, )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
@@ -97,7 +104,7 @@ class CameraPage:
         # 5 Return button
         ReturnButton = QPushButton("Retour")
         ReturnButton.setStyleSheet(cssify("Big Red"))
-        ReturnButton.clicked.connect(lambda: self.mainWindow.loadPage("control"))
+        ReturnButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.CONTROL))
         ReconnectReturnLayout.addWidget(ReturnButton)
 
         logger.debug("Camera options page loaded")
@@ -136,7 +143,7 @@ class CameraPage:
 
         if len(camList) == 0 or camList is None:
             self.CamsChoiceBox.addItem("None")
-            logger.warn("No camera detected")
+            logger.warning("No camera detected")
             return
 
         logger.debug("Updating camera list with %d entries", len(camList))
@@ -148,7 +155,7 @@ class CameraPage:
     @staticmethod
     def filteredDir(obj) -> dict:
         """
-        filteredDir : Converts an Swig object properties to a dictionnary
+        filteredDir : Converts a Swig object properties to a dictionnary
         discarding useless functions such as thisown() and executing callable
         objects such as get_children().
 
@@ -164,15 +171,7 @@ class CameraPage:
             if attr.startswith("_"):
                 continue
 
-            if attr in (
-                "acquire",
-                "append",
-                "disown",
-                "next",
-                "own",
-                "this",
-                "thisown",
-            ):
+            if attr in ("acquire", "append", "disown", "next", "own", "this", "thisown",):
                 continue
 
             if attr.startswith("reserved"):
@@ -199,7 +198,7 @@ class CameraPage:
     @staticmethod
     def htmlTablize(datadict: dict) -> str:
         """
-        HTMLTablize : Formats the given dictionnary into a HTML table
+        HTMLTablize : Formats the given dictionnary into an HTML table
 
         Args:
             datadict (dict): Dictionnary to reformat

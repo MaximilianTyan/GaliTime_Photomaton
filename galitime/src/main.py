@@ -11,16 +11,14 @@ import sys
 from PyQt5.QtWidgets import QApplication
 
 from .controlwindow import ControlWindow
-from .screenwindow import ScreenWindow
-
 from .peripherals.camera import CameraWrapper
-
+from .screenwindow import ScreenWindow
 from .utilities import logger
 
 
 def main():
     """
-    Main function launchgin the photomaton app
+    Main function launching the photomaton app
     """
     # Main app creation ------------------------------
 

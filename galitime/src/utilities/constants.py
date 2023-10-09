@@ -19,6 +19,10 @@ TEMP_PHOTO = "last_photo.jpg"
 
 APP_LOG_FILE = LOG_FOLDER + "galitime.log"
 
+# Email config
+EMAIL_CONFIG_FILE = "./email.cfg"
+EMAIL_KEY_FILE = "./password.key"
+
 # Screen
 FPS = 30
 RESTART_INTERVAL = 30

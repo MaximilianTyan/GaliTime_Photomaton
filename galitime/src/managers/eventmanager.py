@@ -6,19 +6,18 @@
 Module for folder management
 """
 
-import os
 import json
 import logging
+import os
 import re
 import shutil
 
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import QDate
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QMainWindow
 
 from ..managers.emailmanager import EmailManager
 from ..managers.photomanager import PhotoManager
-
 from ..utilities.constants import DATE_FORMAT, ENCODING
 from ..utilities.constants import EVENT_SAVE_FILE
 
@@ -208,11 +207,8 @@ class EventManager:
         if os.path.exists(saveFolder):
             if not overwrite:
                 yesNoButton = QMessageBox.question(
-                    cls.parent,
-                    "Folder already exists",
-                    f"""Folder {name} already exists in f{path}
-                    Do you want to overwrite it ? All previous data will be lost""",
-                )
+                    cls.parent, "Folder already exists", f"""Folder {name} already exists in f{path}
+                    Do you want to overwrite it ? All previous data will be lost""", )
                 if yesNoButton != QMessageBox.Yes:
                     return
 
@@ -254,8 +250,7 @@ class EventManager:
             QMessageBox.critical(
                 cls.parent,
                 "Loading error",
-                f"No {EVENT_SAVE_FILE} file found in\n{folder}\n Aborting load operation\n\nInvalid folder",
-            )
+                f"No {EVENT_SAVE_FILE} file found in\n{folder}\n Aborting load operation\n\nInvalid folder", )
             return False
         cls.saveFolder = folder
 
@@ -267,19 +262,15 @@ class EventManager:
             QMessageBox.warning(
                 cls.parent,
                 "Loading error",
-                f"No raw_photos in \n{folder}\n Creating an empty one\n\nraw_photos folder missing",
-            )
+                f"No raw_photos in \n{folder}\n Creating an empty one\n\nraw_photos folder missing", )
             os.mkdir(cls.saveFolder + "raw_photos")
         PhotoManager.photoFolder = cls.saveFolder + "raw_photos/"
 
         if not os.path.exists(cls.saveFolder + "emails"):
             QMessageBox.warning(
-                cls.parent,
-                "Loading error",
-                f"""No emails in {folder}
+                cls.parent, "Loading error", f"""No emails in {folder}
                 Creating an empty one
-                'emails/' folder missing""",
-            )
+                'emails/' folder missing""", )
             os.mkdir(cls.saveFolder + "emails")
         EmailManager.setEmailFolder(cls.saveFolder + "emails/")
 
@@ -288,22 +279,16 @@ class EventManager:
         defaultValue = "EVENT (default name)"
         if "eventName" not in infoDict.keys():
             QMessageBox.critical(
-                cls.parent,
-                "Invalid info file",
-                f'Property "eventName" missing from info file, \
-                    returning to default value: {attrValue}',
-            )
+                cls.parent, "Invalid info file", f'Property "eventName" missing from info file, \
+                    returning to default value: {attrValue}', )
             infoDict["eventName"] = defaultValue
         cls.setEventName(infoDict["eventName"])
 
         defaultValue = QDate.currentDate().toString(DATE_FORMAT)
         if "eventDate" not in infoDict.keys():
             QMessageBox.critical(
-                cls.parent,
-                "Invalid info file",
-                f'Property "eventDate" missing from info file, \
-                    returning to default value: {defaultValue}',
-            )
+                cls.parent, "Invalid info file", f'Property "eventDate" missing from info file, \
+                    returning to default value: {defaultValue}', )
             infoDict["eventDate"] = defaultValue
         cls.setEventDate(infoDict["eventDate"])
 

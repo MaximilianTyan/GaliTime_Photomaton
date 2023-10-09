@@ -7,8 +7,8 @@ Module to handle printer interaction
 """
 
 import logging
-import subprocess
 import os.path
+import subprocess
 
 import cups
 
@@ -22,6 +22,7 @@ class Connection(cups.Connection):
     """
     cups.Connection wrapper adding support for 'with' keyword
     """
+
     def __enter__(self):
         return self
 
@@ -62,7 +63,8 @@ class ImagePrinter:
     @classmethod
     def printImage(cls, filepath: str) -> None:
         """
-        printImage : Prints file with the printer defined in constants.py using 'lpr' command and CUPS with GutenPrint 5.3.4 drivers.
+        printImage : Prints file with the printer defined in constants.py using 'lpr' command and CUPS with
+        GutenPrint 5.3.4 drivers.
 
         Args:
             filepath (str): Filepath of the image to print

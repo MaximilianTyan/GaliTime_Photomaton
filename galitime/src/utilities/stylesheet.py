@@ -11,6 +11,7 @@ styles = {
     "BLUE": "background-color: rgb(50, 50, 200); color: white;",
     "RED": "background-color: rgb(200, 100, 100);",
     "GREEN": "background-color: rgb(100, 200, 100);",
+    "WHITE": "background-color: rgb(200, 200, 200);",
     "DISABLED": "background-color: rgb(200, 200, 200);",
     "TALL": "height: 50px; font-size: 20px;",
     "LARGE": "width: 300px; font-size: 20px;",

@@ -41,4 +41,8 @@ deactivate
 echo "Removing nala alias ..."
 alias -r nala
 
+# -----------------------------------
+echo "Creating default empty email password file"
+touch password.key
+
 echo "Install done"

@@ -9,8 +9,8 @@ Logger module, initializes python logging
 import logging
 import os
 
-from .constants import ENCODING, LOGGER_FORMAT
 from .constants import APP_LOG_FILE, LOG_FOLDER
+from .constants import ENCODING, LOGGER_FORMAT
 
 
 def setup():

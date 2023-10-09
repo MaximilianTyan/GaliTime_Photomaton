@@ -6,25 +6,28 @@
 Module containing class handling camera IO and related functions
 """
 
+from __future__ import annotations
+
+import atexit
+import logging
 import os
 import subprocess
 import time
-import logging
-import atexit
+from typing import Callable
 
 import gphoto2 as gp
-from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QDateTime
+from PyQt5.QtWidgets import QMessageBox
 
-from ..utilities.constants import ENCODING, MOVIE_PATH
 from ..utilities.constants import CAMERA_LOG_FILE, DEFAULT_PHOTO
+from ..utilities.constants import ENCODING, MOVIE_PATH
 from ..utilities.constants import START_BYTES, STOP_BYTES
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-def promptError(func) -> callable:
+def promptError(func: Callable) -> Callable:
     """
     promptError : Decorator aimed at encapsulating a function call in a try/except
     structure and prompt any error into a popup. This aims at informing about
@@ -44,9 +47,13 @@ def promptError(func) -> callable:
             normalReturn = func(*args, **kwargs)
             return normalReturn
         except Exception as err:
-            logger.error("A camera error occured in function : %s : %s", func, err)
+            logger.error(
+                "A camera error occurred in function %s : %s", func.__name__, err
+            )
             QMessageBox.critical(
-                None, "Camera error", f"An error occured in function \n{func}:\n {err}"
+                None, "Camera error", "An error occurred in function '{function}':\n{raw}\n\nError:\n{error}".format(
+                    function=func.__name__, raw=func, error=err
+                )
             )
             return None
 
@@ -58,6 +65,8 @@ class CameraWrapper:
     Wrapper class for the camera, in charge of creating and managing processes
     responsible for previewing images.
     """
+
+    CameraInstance: CameraWrapper = None
 
     def __init__(self) -> None:
         self.connected = False
@@ -85,7 +94,7 @@ class CameraWrapper:
         atexit.register(self._cleanUp)
 
     @classmethod
-    def getCamera(cls) -> object:
+    def getCamera(cls) -> CameraWrapper:
         """
         getCamera : Returns the current camera instance
 
@@ -106,25 +115,16 @@ class CameraWrapper:
         else:
             logger.debug("Successfully cleared gphoto processes")
 
-        # clearedProcess = False
-        # pythonPID = os.getpid()
-        # for process in psutil.process_iter():
-        #     if process.pid == pythonPID:
-        #         continue  # Don't kill current process
+        # clearedProcess = False  # pythonPID = os.getpid()  # for process in psutil.process_iter():  #     if  #  #
+        # process.pid == pythonPID:  #         continue  # Don't kill current process
 
-        #     if "psutil" in process.name():
-        #         continue  # Don't kill the generator
+        #     if "psutil" in process.name():  #         continue  # Don't kill the generator
 
-        #     if "gphoto2" in process.name():
-        #         logger.info("Killing %s", process)
-        #         try:
-        #             process.kill()
-        #             clearedProcess = True
-        #         except psutil.AccessDenied:
-        #             logger.warning("Failed to kill %s", process)
+        #     if "gphoto2" in process.name():  #         logger.info("Killing %s", process)  #         try:  #  #  #
+        #     process.kill()  #             clearedProcess = True  #         except psutil.AccessDenied:  #  #  #  #
+        #     logger.warning("Failed to kill %s", process)
 
-        # if not clearedProcess:
-        #     logger.info("No process cleared")
+        # if not clearedProcess:  #     logger.info("No process cleared")
 
     def _cleanMovieFile(self) -> None:
         filesize = os.path.getsize(MOVIE_PATH)
@@ -223,7 +223,7 @@ class CameraWrapper:
             file.seek(filesize - maxsize if (filesize - maxsize) > 0 else 0)
             rawdata = file.read(maxsize if maxsize < filesize else filesize)
 
-        frame = rawdata[rawdata.rfind(START_BYTES) :]
+        frame = rawdata[rawdata.rfind(START_BYTES):]
 
         # Checking if the image has been fully received
         if not frame.endswith(STOP_BYTES):
@@ -250,8 +250,7 @@ class CameraWrapper:
             ["gphoto2", "--capture-movie", "--force-overwrite"],
             stderr=subprocess.STDOUT,
             stdout=self.logfile,
-            cwd=os.path.dirname(MOVIE_PATH),
-        )
+            cwd=os.path.dirname(MOVIE_PATH), )
         # , "--stdout", "|",
         # "ffmpeg", "-i", "-", "-f", "mjpeg", "out.avi", "-y"])
         logger.info("POPEN Liveview capture started")
@@ -275,13 +274,7 @@ class CameraWrapper:
         self.logfile.close()
 
     def _cleanUp(self) -> None:
-        exitFunctions = (
-            self.cam.exit,
-            self.stopPreview,
-            self._cleanMovieFile,
-            self._clearGphoto,
-            self._closeLog,
-        )
+        exitFunctions = (self.cam.exit, self.stopPreview, self._cleanMovieFile, self._clearGphoto, self._closeLog,)
 
         for func in exitFunctions:
             try:

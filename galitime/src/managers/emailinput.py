@@ -8,10 +8,10 @@ Module in charge of email input
 
 import logging
 
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QDialog
-from PyQt5.QtWidgets import QLineEdit, QCompleter
+from PyQt5.QtWidgets import QCompleter, QLineEdit
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QLabel, QPushButton
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
-from PyQt5.QtWidgets import QPushButton, QLabel
 
 from ..utilities.stylesheet import cssify
 
@@ -26,10 +26,10 @@ class EmailInput(QDialog):
 
     def __init__(self):
         QDialog.__init__(self)
-        self.emailList = []
+        self.emailList: list[str] = []
 
         self.TextInput = None
-        self.ListView = None
+        self.ListView: QListWidget = None
 
     def prompt(self, emailList) -> None:
         """
@@ -99,11 +99,18 @@ class EmailInput(QDialog):
     def _removeItem(self) -> None:
         item = self.ListView.currentItem()
 
-        self.ListView.removeItemWidget(self.ListView.currentItem())
-        print(self.ListView.selectedItems())
-        self.emailList.remove(item.text())
+        if item.text() in self.emailList:
+            self.emailList.remove(item.text())
 
         logger.info("Removed email address %s from destinator list", item.text())
+
+        self._updateList()
+
+    def _updateList(self) -> None:
+        self.ListView.clear()
+        for email in self.emailList:
+            EmailItem = QListWidgetItem(email)
+            self.ListView.insertItem(0, EmailItem)
 
     def addEmail(self, email: str) -> None:
         """
@@ -113,11 +120,8 @@ class EmailInput(QDialog):
             email (str): Email to add
         """
         _email = str(email).strip()
-
-        EmailItem = QListWidgetItem(_email)
-
-        self.ListView.insertItem(0, EmailItem)
         self.emailList.append(_email)
+        self._updateList()
         logger.info("Added destinator %s", _email)
 
     def getSelectedMails(self) -> list[str]:

@@ -9,39 +9,39 @@ Module to handle the event options page
 import logging
 import os.path
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QLabel, QPushButton, QLineEdit, QDateEdit
+from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtWidgets import QAbstractSpinBox
+from PyQt5.QtWidgets import QDateEdit, QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
 
-from PyQt5.QtCore import Qt, QDate
-
+from ..abstractcontrolwindow import AbstractControlWindow
+from ..controlpages.abstractpage import AbstractPage
+from ..controlpages.pagesenum import PageEnum
 from ..managers.eventmanager import EventManager
 from ..screenwindow import ScreenWindow
-
-from ..utilities.stylesheet import cssify
 from ..utilities.constants import DATE_FORMAT
+from ..utilities.stylesheet import cssify
 
+# ---------- LOGGER SETUP ----------
 logger = logging.getLogger(__name__)
 logger.propagate = True
+# ----------------------------------
 
 INPUT_GREEN = "background-color: rgb(150, 250, 150);"
 INPUT_RED = "background-color: rgb(250, 150, 150);"
 
 
-class OptionsPage:
+class OptionsPage(AbstractPage):
     """
     StartPage : Handles option page functionnality
     """
 
-    def __init__(self, mainWindow, createEvent=False):
+    def __init__(self, mainWindow: AbstractControlWindow, createEvent=False):
         self.mainWindow = mainWindow
 
         self.tempEventInfo = {
-            "saveFolder": None,
-            "decorFile": None,
-            "eventName": None,
-            "eventDate": None,
+            "saveFolder": None, "decorFile": None, "eventName": None, "eventDate": None,
         }
 
         self.EventInput = None
@@ -54,7 +54,7 @@ class OptionsPage:
         self.screenWindow = ScreenWindow.getScreen()
         self.createEvent = createEvent
 
-    def load(self):
+    def load(self) -> QWidget:
         """
         load : Loads the option page in a QWidget and returns it
 
@@ -68,8 +68,7 @@ class OptionsPage:
             self.mainWindow.width() // 10,
             self.mainWindow.width() // 10,
             self.mainWindow.width() // 10,
-            self.mainWindow.width() // 10,
-        )
+            self.mainWindow.width() // 10, )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
@@ -304,7 +303,7 @@ class OptionsPage:
             EventManager.setEventOpened(True)
 
         EventManager.updateInfoFile()
-        self.mainWindow.loadPage("control")
+        self.mainWindow.loadPage(PageEnum.CONTROL)
 
     def cancelOptions(self) -> None:
         """
@@ -312,9 +311,9 @@ class OptionsPage:
         control page if an event is opened, to start page otherwise
         """
         if EventManager.isEventOpened():
-            self.mainWindow.loadPage("control")
+            self.mainWindow.loadPage(PageEnum.CONTROL)
         else:
-            self.mainWindow.loadPage("start")
+            self.mainWindow.loadPage(PageEnum.START)
 
     def exitEvent(self) -> None:
         """
@@ -326,4 +325,4 @@ class OptionsPage:
             self.screenWindow.stopPreview()
 
         EventManager.setEventOpened(False)
-        self.mainWindow.loadPage("start")
+        self.mainWindow.loadPage(PageEnum.START)

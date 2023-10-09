@@ -6,22 +6,27 @@
 Screen window, contains screen class and control options
 """
 
+from __future__ import annotations
+
+import atexit
 import logging
 import os
-import atexit
 
-from PyQt5.QtWidgets import QMainWindow, QLabel
-from PyQt5.QtGui import QPixmap, QPainter
-from PyQt5.QtWidgets import QShortcut, QApplication
 from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtWidgets import QLabel, QMainWindow
+from PyQt5.QtWidgets import QShortcut
 
 from .peripherals.camera import CameraWrapper
-
-from .utilities.constants import FPS, RESTART_INTERVAL
 from .utilities.constants import DEFAULT_CAM_VIEW, DEFAULT_DECOR
+from .utilities.constants import FPS, RESTART_INTERVAL
 
+# ---------- LOGGER SETUP ----------
 logger = logging.getLogger(__name__)
 logger.propagate = True
+
+
+# ----------------------------------
 
 
 class ScreenWindow(QMainWindow):
@@ -56,7 +61,7 @@ class ScreenWindow(QMainWindow):
         ScreenWindow.ScreenInstance = self
 
     @classmethod
-    def getScreen(cls) -> QMainWindow:
+    def getScreen(cls) -> ScreenWindow:
         """
         getScreen : Returns the current screen window instance
 

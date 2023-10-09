@@ -8,29 +8,48 @@ functionnality functions are stored in controlfunctions.py
 """
 
 import logging
+from typing import Type, TypeVar
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QShortcut
-from PyQt5.QtCore import Qt
 
-from .screenwindow import ScreenWindow
-from .controlpages.startpage import StartPage
-from .controlpages.optionspage import OptionsPage
-from .controlpages.controlpage import ControlPage
+from .abstractcontrolwindow import AbstractControlWindow
+from .controlpages.abstractpage import AbstractPage
 from .controlpages.camerapage import CameraPage
+from .controlpages.controlpage import ControlPage
+from .controlpages.emailpage import MailPage
+from .controlpages.optionspage import OptionsPage
+from .controlpages.pagesenum import PageEnum
 from .controlpages.printerpage import PrinterPage
+from .controlpages.startpage import StartPage
 from .managers.eventmanager import EventManager
+from .screenwindow import ScreenWindow
 
+# ---------- LOGGER SETUP ----------
 logger = logging.getLogger(__name__)
 logger.propagate = True
+# ----------------------------------
+
+ImplementsAbstractPage = TypeVar('ImplementsAbstractPage', bound=AbstractPage)
+
+PAGE_DICT: dict[PageEnum, Type[ImplementsAbstractPage]] = {
+    PageEnum.START: StartPage,
+    PageEnum.CONTROL: ControlPage,
+    PageEnum.CAMERA: CameraPage,
+    PageEnum.PRINTER: PrinterPage,
+    PageEnum.MAIL: MailPage,
+    PageEnum.OPTIONS: OptionsPage
+}
 
 
-class ControlWindow(QMainWindow):
+class ControlWindow(AbstractControlWindow):
     """ControlWindow : Main control window holding buttons, labels and every control widget"""
 
     def __init__(self) -> None:
         super().__init__()
 
+        self.currentPage = None
         self.setWindowTitle("GaliTime")
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
 
@@ -38,7 +57,7 @@ class ControlWindow(QMainWindow):
 
         EventManager.setParentWindow(self)
 
-        self.loadPage("start")
+        self.loadPage(PageEnum.START)
         self.show()
 
     @classmethod
@@ -51,21 +70,15 @@ class ControlWindow(QMainWindow):
         """
         return cls
 
-    def loadPage(self, page: str, *args, **kwargs) -> None:
+    def loadPage(self, page: PageEnum, *args, **kwargs) -> None:
         """
         loadPage : Loads and displays the requested page
 
         Args:
             page (str): page name
         """
-        pagesDict = {
-            "start": StartPage,
-            "options": OptionsPage,
-            "control": ControlPage,
-            "camera": CameraPage,
-            "printer": PrinterPage,
-        }
-        self.currentPage = object.__new__(pagesDict[page])
+
+        self.currentPage = object.__new__(PAGE_DICT[page])
         self.currentPage.__init__(self, *args, **kwargs)
         self.setCentralWidget(self.currentPage.load())
 

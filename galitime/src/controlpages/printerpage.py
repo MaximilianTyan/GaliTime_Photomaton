@@ -8,28 +8,32 @@ Module managing the printer page
 
 import logging
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
-from PyQt5.QtWidgets import QLabel, QPushButton, QComboBox
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QComboBox, QLabel, QPushButton
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtWidgets import QHeaderView
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 
-from PyQt5.QtCore import Qt
-
+from ..abstractcontrolwindow import AbstractControlWindow
+from ..controlpages.abstractpage import AbstractPage
+from ..controlpages.pagesenum import PageEnum
 from ..peripherals.printer import ImagePrinter, PrinterError
 from ..utilities.stylesheet import cssify
 
+# ---------- LOGGER SETUP ----------
 logger = logging.getLogger(__name__)
 logger.propagate = True
+# ----------------------------------
 
 SELECTED_STR = " (sélectionnée)"
 
 
-class PrinterPage:
+class PrinterPage(AbstractPage):
     """
     StartPage : Handles printer page functionnality
     """
 
-    def __init__(self, mainWindow):
+    def __init__(self, mainWindow: AbstractControlWindow):
         self.mainWindow = mainWindow
 
         self.PrinterChoiceBox = None
@@ -51,8 +55,7 @@ class PrinterPage:
             self.mainWindow.width() // 10,
             self.mainWindow.width() // 20,
             self.mainWindow.width() // 10,
-            self.mainWindow.width() // 20,
-        )
+            self.mainWindow.width() // 20, )
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
@@ -128,7 +131,7 @@ class PrinterPage:
         """
         returnToControl : Loads the control page
         """
-        self.mainWindow.loadPage("control")
+        self.mainWindow.loadPage(PageEnum.CONTROL)
 
     def updatePrintersList(self) -> None:
         """
