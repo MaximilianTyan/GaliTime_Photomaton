@@ -123,7 +123,7 @@ class EmailManager:
             logger.warning("Missing email server config file: %s", EMAIL_CONFIG_FILE)
             return
         cls.config.read(EMAIL_CONFIG_FILE)
-        logger.debug(f"Read {EMAIL_CONFIG_FILE} config file")
+        logger.debug(f"Read %s config file", EMAIL_CONFIG_FILE)
 
     @classmethod
     def getConfig(cls) -> configparser.ConfigParser:

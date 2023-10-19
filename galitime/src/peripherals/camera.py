@@ -111,7 +111,7 @@ class CameraWrapper:
         completedProcess = subprocess.run(["pkill", "gphoto2"], check=False)
 
         if completedProcess.returncode != 0:
-            logger.warn("Failed to clear gphoto processes")
+            logger.warning("Failed to clear gphoto processes")
         else:
             logger.debug("Successfully cleared gphoto processes")
 
