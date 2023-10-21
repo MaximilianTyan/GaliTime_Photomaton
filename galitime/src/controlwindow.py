@@ -44,7 +44,8 @@ PAGE_DICT: dict[PageEnum, Type[ImplementsAbstractPage]] = {
 
 
 class ControlWindow(AbstractControlWindow):
-    """ControlWindow : Main control window holding buttons, labels and every control widget"""
+    """ControlWindow : Main control window holding buttons, labels and every control
+    widget"""
 
     def __init__(self) -> None:
         super().__init__()
@@ -78,8 +79,7 @@ class ControlWindow(AbstractControlWindow):
             page (str): page name
         """
 
-        self.currentPage = object.__new__(PAGE_DICT[page])
-        self.currentPage.__init__(self, *args, **kwargs)
+        self.currentPage = PAGE_DICT[page](self, *args, **kwargs)
         self.setCentralWidget(self.currentPage.load())
 
     def _shortcutSetup(self):
@@ -100,7 +100,8 @@ class ControlWindow(AbstractControlWindow):
     def closeEvent(self, event) -> None:
         """
         closeEvent : Closes the screen window when the control window is closed
-        This function is called by QMainWindow close event and shouldn't be called directly
+        This function is called by QMainWindow close event and shouldn't be called
+        directly
 
         Args:
             event (Qt Event): Close event

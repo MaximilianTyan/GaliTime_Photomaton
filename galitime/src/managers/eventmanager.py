@@ -73,7 +73,8 @@ class EventManager:
     @classmethod
     def setEventDate(cls, eventDate: str) -> None:
         """
-        setEventDate : sets the event date to the supplied date with the specified format
+        setEventDate : sets the event date to the supplied date with the specified
+        format
 
         Args:
             eventDate (str): evant date with the format yyyy-MM-dd (year-month-day)
@@ -120,7 +121,8 @@ class EventManager:
     @classmethod
     def getEventDate(cls) -> str:
         """
-        getEventDate : returns the event date with the format yyyy-MM-dd (year-month-day)
+        getEventDate : returns the event date with the format yyyy-MM-dd (
+        year-month-day)
         """
         return cls.eventDate
 
@@ -137,7 +139,8 @@ class EventManager:
         createFolderScructure : Create folder structure of an event folder
 
         Args:
-            saveFolder (str): folder path in witch the event file structure will be created
+            saveFolder (str): folder path in witch the event file structure will be
+            created
         """
         logger.debug("Creating new event folder structure in folder %s", saveFolder)
         os.mkdir(saveFolder)
@@ -167,7 +170,8 @@ class EventManager:
     @classmethod
     def _writeInfoFile(cls, infodict: dict) -> None:
         """
-        _writeInfoFile: Write supplied dictionnary to info file in it's json representation.
+        _writeInfoFile: Write supplied dictionnary to info file in it's json
+        representation.
 
         Args:
             infodict (dict): event info dict to write.
@@ -178,7 +182,8 @@ class EventManager:
     @classmethod
     def _readInfoFile(cls) -> dict:
         """
-        _readInfoFile : Reads the event info file and return a dict representation of it's json content
+        _readInfoFile : Reads the event info file and return a dict representation of
+        it's json content
 
         Returns:
             dict: json content of info file
@@ -207,7 +212,9 @@ class EventManager:
         if os.path.exists(saveFolder):
             if not overwrite:
                 yesNoButton = QMessageBox.question(
-                    cls.parent, "Folder already exists", f"""Folder {name} already exists in f{path}
+                    cls.parent,
+                    "Folder already exists",
+                    f"""Folder {name} already exists in f{path}
                     Do you want to overwrite it ? All previous data will be lost""", )
                 if yesNoButton != QMessageBox.Yes:
                     return
@@ -222,7 +229,8 @@ class EventManager:
     @classmethod
     def loadSaveFolder(cls, folder: str = None) -> bool:
         """
-        loadSaveFolder : Loads event information from the folder supplied via "folder" argument.
+        loadSaveFolder : Loads event information from the folder supplied via
+        "folder" argument.
         If None is supplied, user will be prompt with a file dialog to choose it.
 
         Args:
@@ -250,7 +258,8 @@ class EventManager:
             QMessageBox.critical(
                 cls.parent,
                 "Loading error",
-                f"No {EVENT_SAVE_FILE} file found in\n{folder}\n Aborting load operation\n\nInvalid folder", )
+                f"No {EVENT_SAVE_FILE} file found in\n{folder}\n Aborting load "
+                f"operation\n\nInvalid folder", )
             return False
         cls.saveFolder = folder
 
@@ -262,7 +271,8 @@ class EventManager:
             QMessageBox.warning(
                 cls.parent,
                 "Loading error",
-                f"No raw_photos in \n{folder}\n Creating an empty one\n\nraw_photos folder missing", )
+                f"No raw_photos in \n{folder}\n Creating an empty one\n\nraw_photos "
+                f"folder missing", )
             os.mkdir(cls.saveFolder + "raw_photos")
         PhotoManager.photoFolder = cls.saveFolder + "raw_photos/"
 
@@ -279,15 +289,17 @@ class EventManager:
         defaultValue = "EVENT (default name)"
         if "eventName" not in infoDict.keys():
             QMessageBox.critical(
-                cls.parent, "Invalid info file", f'Property "eventName" missing from info file, \
-                    returning to default value: {attrValue}', )
+                cls.parent, "Invalid info file", f'Property "eventName" missing from '
+                                                 f'info file, \
+                    returning to default value: {defaultValue}', )
             infoDict["eventName"] = defaultValue
         cls.setEventName(infoDict["eventName"])
 
         defaultValue = QDate.currentDate().toString(DATE_FORMAT)
         if "eventDate" not in infoDict.keys():
             QMessageBox.critical(
-                cls.parent, "Invalid info file", f'Property "eventDate" missing from info file, \
+                cls.parent, "Invalid info file", f'Property "eventDate" missing from '
+                                                 f'info file, \
                     returning to default value: {defaultValue}', )
             infoDict["eventDate"] = defaultValue
         cls.setEventDate(infoDict["eventDate"])

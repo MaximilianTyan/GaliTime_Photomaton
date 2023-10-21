@@ -171,7 +171,8 @@ class CameraPage(AbstractPage):
             if attr.startswith("_"):
                 continue
 
-            if attr in ("acquire", "append", "disown", "next", "own", "this", "thisown",):
+            if attr in (
+            "acquire", "append", "disown", "next", "own", "this", "thisown",):
                 continue
 
             if attr.startswith("reserved"):

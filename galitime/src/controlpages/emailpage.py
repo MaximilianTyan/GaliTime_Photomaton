@@ -7,6 +7,8 @@ Module to handle the event options page
 """
 
 import logging
+import smtplib
+import socket
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
@@ -147,12 +149,14 @@ class MailPage(AbstractPage):
 
     def updateMailCount(self) -> None:
         """Update the number of emails to be sent"""
-        self.MailCountEdit.setText(str(EmailManager.getEmailNumber()) + " dossiers email trouvés")
+        self.MailCountEdit.setText(
+            str(EmailManager.getEmailNumber()) + " dossiers email trouvés"
+        )
 
     def updateMailList(self) -> None:
         """Update the email list view"""
         emaiStrList = EmailManager.getEmailList()
-        logger.info(f"Updating email list with {len(emaiStrList)} entries")
+        logger.info("Updating email list with %d entries", len(emaiStrList))
 
         for email in emaiStrList:
             emailItem = QListWidgetItem(email)
@@ -164,19 +168,19 @@ class MailPage(AbstractPage):
         """
         Sends emails to selected persons
         """
-        selectedEmailFolders: list[str] = [self.EmailList.item(i).text() for i in range(self.EmailList.count()) if
+        selectedEmailFolders: list[str] = [self.EmailList.item(i).text() for i in
+            range(self.EmailList.count()) if
             self.EmailList.item(i).checkState() == Qt.Checked]
-        logger.info(f"Sending {len(selectedEmailFolders)} with corresponding photos")
+        logger.info("Sending %d with corresponding photos", len(selectedEmailFolders))
         try:
             EmailManager.sendPhotosToMails(selectedEmailFolders)
-        except Exception as err:
+        except (socket.gaierror, smtplib.SMTPException) as err:
             logger.error(
-                "A mail server error occurred %s : %s", err
+                "A mail sending error occurred : %s\n", str(err)
             )
             QMessageBox.critical(
                 None,
-                "Server error",
-                "An mail server error occurred while trying to send {mail_cont} mails:\n\nError:\n{error}".format(
-                    mail_cont=len(selectedEmailFolders), error=err
-                )
+                "Sending error",
+                "An mail sending error occurred while trying to send "
+                f"{len(selectedEmailFolders)} mails:\n\nError:\n{err}"
             )

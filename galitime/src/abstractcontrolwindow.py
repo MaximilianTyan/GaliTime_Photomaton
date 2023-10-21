@@ -22,7 +22,8 @@ logger.propagate = True
 # ----------------------------------
 
 class AbstractControlWindow(QMainWindow):
-    """ControlWindow : Main control window holding buttons, labels and every control widget"""
+    """ControlWindow : Main control window holding buttons, labels and every control
+    widget"""
 
     @classmethod
     @abc.abstractmethod
@@ -33,7 +34,6 @@ class AbstractControlWindow(QMainWindow):
         Returns:
             QMainWindow: Control window instance
         """
-        ...
 
     @abc.abstractmethod
     def loadPage(self, page: enum.Enum, *args, **kwargs) -> None:
@@ -43,11 +43,9 @@ class AbstractControlWindow(QMainWindow):
         Args:
             page (str): page name
         """
-        ...
 
     @abc.abstractmethod
     def toggleFullscreen(self) -> None:
         """
         toggleFullscreen : Toggles fullscreen/windowed view
         """
-        ...

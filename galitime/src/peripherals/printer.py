@@ -26,7 +26,7 @@ class Connection(cups.Connection):
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, _1, _2, _3):
         del self
 
 
@@ -63,7 +63,8 @@ class ImagePrinter:
     @classmethod
     def printImage(cls, filepath: str) -> None:
         """
-        printImage : Prints file with the printer defined in constants.py using 'lpr' command and CUPS with
+        printImage : Prints file with the printer defined in constants.py using 'lpr'
+        command and CUPS with
         GutenPrint 5.3.4 drivers.
 
         Args:
@@ -81,7 +82,10 @@ class ImagePrinter:
         try:
             cls.clearJobs()
         except PrinterError as err:
-            logger.warning("A printer error has occured during job cleaning: %s", str(err))
+            logger.warning(
+                "A printer error has occured during job cleaning: %s",
+                str(err)
+            )
 
         with Connection() as cupsCon:
             cupsCon.printFile(
@@ -91,7 +95,8 @@ class ImagePrinter:
     @classmethod
     def listPrinters(cls) -> tuple[str]:
         """
-        listPrinters : Returns a tuple containing the names of available printers using pycups
+        listPrinters : Returns a tuple containing the names of available printers
+        using pycups
 
         Returns:
             tuple[str]: Names of available printers
@@ -129,12 +134,13 @@ class ImagePrinter:
         clearJobs : Clears all current jobs using pycups
 
         Raises:
-            PrinterError: If the selected printer doesn't match any available printers name
+            PrinterError: If the selected printer doesn't match any available
+            printers name
         """
         logger.debug("Clearing all jobs for printer %s", cls.printerName)
 
         if cls.printerName not in cls.listPrinters():
-            raise PrinterError("Printer %s not found", cls.printerName)
+            raise PrinterError(f"Printer {cls.printerName} not found", )
 
         with Connection() as cupsCon:
             cupsCon.cancelAllJobs(cls.printerName)
@@ -144,8 +150,10 @@ class ImagePrinter:
     @classmethod
     def getPrinterOptions(cls, printerName: str = None) -> dict[str, str]:
         """
-        getPrinterOptions : Returns a dict containing current printer options using a call to 'lpoptions -l'
-                            The class attribute printerName will be used to specify the printer using '-p'
+        getPrinterOptions : Returns a dict containing current printer options using a
+        call to 'lpoptions -l'
+                            The class attribute printerName will be used to specify
+                            the printer using '-p'
 
         Raises:
             PrinterError: If the printer name doesn't match any available printers
@@ -160,7 +168,7 @@ class ImagePrinter:
         logger.info("Querying options for printer %s", printerName)
 
         if printerName not in cls.listPrinters():
-            raise PrinterError("Printer %s not found", cls.printerName)
+            raise PrinterError(f"Printer {cls.printerName} not found", )
 
         stdoutput = subprocess.check_output(
             ["lpoptions", "-p", printerName, "-l"]

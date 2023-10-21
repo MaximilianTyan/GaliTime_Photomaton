@@ -11,7 +11,7 @@ test*
 *.log
 
 #Email config files
-*.key
+**/*.key
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

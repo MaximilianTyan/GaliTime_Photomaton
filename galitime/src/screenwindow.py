@@ -31,7 +31,8 @@ logger.propagate = True
 
 class ScreenWindow(QMainWindow):
     """
-    ScreenWindow : Windows designed to hold the live screen where images will be displayed.
+    ScreenWindow : Windows designed to hold the live screen where images will be
+    displayed.
     """
 
     ScreenInstance = None
@@ -164,7 +165,8 @@ class ScreenWindow(QMainWindow):
             filepath (str): Filepath with filename to save the image
 
         Returns:
-            str: Filepath where the image was saved (should correpond to suppied filename)
+            str: Filepath where the image was saved (should correpond to suppied
+            filename)
         """
         if os.path.exists(filepath):
             os.remove(filepath)

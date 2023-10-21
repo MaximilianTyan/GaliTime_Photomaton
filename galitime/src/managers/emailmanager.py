@@ -7,10 +7,9 @@ Module in charge of email handling
 """
 
 import atexit
-import configparser
-import datetime
-import email
 # Config & data files
+import configparser
+import email.message
 import json
 import logging
 import mimetypes
@@ -21,8 +20,8 @@ import shutil
 import smtplib
 
 from .emailinput import EmailInput
-from ..utilities.constants import DATE_FORMAT, EMAIL_INFO_FILE, ENCODING
-from ..utilities.constants import EMAIL_CONFIG_FILE, EMAIL_KEY_FILE
+from ..utilities.constants import EMAIL_CONFIG_FILE
+from ..utilities.constants import EMAIL_INFO_FILE, ENCODING
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -117,13 +116,14 @@ class EmailManager:
     @classmethod
     def readConfig(cls) -> None:
         """
-        Reads the EMAIL_CONFIG_FILE if it exists and updates the internal config parser object accordingly
+        Reads the EMAIL_CONFIG_FILE if it exists and updates the internal config
+        parser object accordingly
         """
         if not os.path.exists(EMAIL_CONFIG_FILE):
             logger.warning("Missing email server config file: %s", EMAIL_CONFIG_FILE)
             return
         cls.config.read(EMAIL_CONFIG_FILE)
-        logger.debug(f"Read %s config file", EMAIL_CONFIG_FILE)
+        logger.debug("Read %s config file", EMAIL_CONFIG_FILE)
 
     @classmethod
     def getConfig(cls) -> configparser.ConfigParser:
@@ -199,17 +199,19 @@ class EmailManager:
         session.starttls()
 
         logger.info(
-            "Opening connection to mail server " + config["server"]["hostname"] + ":" + config["server"]["hostname"]
+            "Opening connection to mail server " + config["server"]["hostname"] + ":" +
+            config["server"]["hostname"]
         )
 
         # Loging in
         user = config["user"]["login"]
+        keyFile = config["files"]["key_path"]
 
-        if not os.path.exists(EMAIL_KEY_FILE):
-            raise FileNotFoundError(f"No {EMAIL_KEY_FILE} file could be found for logging in")
+        if not os.path.exists(keyFile):
+            raise FileNotFoundError(f"No {keyFile} file could be found for logging in")
         with open(
-                EMAIL_KEY_FILE, "rt", encoding=ENCODING
-        ) as file:  # The filepath is hardcoded to avoid forgetting to add it in gitignore
+                keyFile, "rt", encoding=ENCODING
+        ) as file:
             password = file.read().strip()
 
         session.login(user=user, password=password)
@@ -230,7 +232,8 @@ class EmailManager:
         cls, emailAddress: str, imagePathList: list[str]
     ) -> email.message.EmailMessage:
         """
-        createMailMessage : Creates an email object and adds each image as an attachement.
+        createMailMessage : Creates an email object and adds each image as an
+        attachement.
         The mail body is configured in the email.cfg file.
 
         Args:
@@ -238,35 +241,58 @@ class EmailManager:
             imagePathList (list(str)): List of image file to be sent with the email.
 
         Returns:
-            email.message.EmailMessage : Mail object destined for emailAddress with images as attachements.
+            email.message.EmailMessage : Mail object destined for emailAddress with
+            images as attachements.
         """
+
+        # https://learn.microsoft.com/en-us/previous-versions/office/developer
+        # /exchange-server-2010/aa563064(v=exchg.140)
+        # And chatGPT with "SMTP MIME Tree for HTML+embedded images+attachements"
+        # Multipart / Mixed
+        # | -- Multipart / Related
+        # | | -- Text / HTML
+        # | | -- Image(Embedded)
+        # | -- Attachment
 
         config = cls.getConfig()
 
         # Email writing
         message = email.message.EmailMessage()
-        message["Subject"] = config["message"]["body"].format(
-            date=datetime.date().strftime(DATE_FORMAT)
-        )
-        message["From"] = config["user"]["login"]
+        message["Subject"] = config["message"]["subject"]
+        message["From"] = config["message"]["from"]
         message["To"] = emailAddress
 
-        for imagePath in imagePathList:
-            ctype, fileEncoding = mimetypes.guess_type(imagePath)
-            subtype = ctype.split("/")[1]
+        # Add HTML content
+        with open(config["files"]["body_path"], 'rb') as file:
+            message.add_related(file.read(), maintype='text', subtype='html')
 
-            with open(imagePath, "rb", encoding=fileEncoding) as file:
-                imgData = file.read()
-            message.add_attachment(imgData, maintype="image", subtype=subtype)
+        # Add resources used in the HTML file
+        for filepath in os.listdir(config["files"]["resources_path"]):
+            mimeType, _ = mimetypes.guess_type(filepath)
+            maintype, subtype = mimeType.split('/')
+            with open(filepath, 'rb') as file:
+                message.add_related(file.read(), maintype=maintype, subtype=subtype)
+
+        # Attachements, here photos
+        for imagePath in imagePathList:
+            with open(imagePath, 'rb') as image:
+                mimeType, _ = mimetypes.guess_type(imagePath)
+                maintype, subtype = mimeType.split('/')
+                message.add_attachment(image.read(), maintype=maintype, subtype=subtype)
 
         return message
 
     @classmethod
-    def sendSingleMail(cls, message) -> None:
+    def sendSingleMail(cls, message: email.message.EmailMessage) -> None:
+        """Send the provided email object through the SMTP connection
+
+        Args:
+            message (email.message.EmailMessage):
+        """
         logger.info("Sending single mail...")
         cls.connectToMailServer()
 
-        status = cls.mailSession.send_message(message)
+        status = cls.mailSession.send_message(message.as_string())
         logger.info("Mail send request returned status %s", str(status))
 
         cls.closeConnection()
@@ -282,16 +308,24 @@ class EmailManager:
         logger.info("Sending %u emails containing photos", len(mailFolderList))
 
         cls.connectToMailServer()
+
         mailsStatuses = []
         for emailFolder in mailFolderList:
-            with open(emailFolder + EMAIL_INFO_FILE, "rt", encoding=ENCODING) as info:
-                emailAddress = info.read().strip()
+            folderPath = cls.getEmailFolder() + emailFolder
+            if not folderPath.endswith('/'):
+                folderPath += '/'
 
-            imagePathList = os.listdir(emailFolder)
-            imagePathList.remove(EMAIL_INFO_FILE)
+            # Retrieve destination address
+            with open(folderPath + EMAIL_INFO_FILE, "rt", encoding=ENCODING) as info:
+                emailAddress = json.load(info)["email"].strip()
+
+            imagePathList = [
+                folderPath + imagePath for imagePath in os.listdir(folderPath)
+            ]
+            if folderPath + EMAIL_INFO_FILE in imagePathList:
+                imagePathList.remove(folderPath + EMAIL_INFO_FILE)
 
             message = cls.createMailMessage(emailAddress, imagePathList)
-
             errorsDict = cls.mailSession.send_message(message)
             if len(errorsDict):
                 mailsStatuses.append(errorsDict)
@@ -300,6 +334,9 @@ class EmailManager:
             logger.info("All mails have been sent")
         else:
             logger.warning(
-                "%d Email send errors occured:\n%s", len(mailsStatuses), "\n".join(mailsStatuses), )
+                "%d Email send errors occured:\n%s",
+                len(mailsStatuses),
+                "\n".join(mailsStatuses),
+            )
 
         cls.closeConnection()

@@ -152,7 +152,8 @@ class PrinterPage(AbstractPage):
 
     def updatePrinterOptions(self) -> None:
         """
-        updatePrinterOptions : Updates the printer option table with options from selected printer
+        updatePrinterOptions : Updates the printer option table with options from
+        selected printer
         """
         try:
             printerOptions = ImagePrinter.getPrinterOptions(

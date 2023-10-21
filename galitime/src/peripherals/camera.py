@@ -51,9 +51,10 @@ def promptError(func: Callable) -> Callable:
                 "A camera error occurred in function %s : %s", func.__name__, err
             )
             QMessageBox.critical(
-                None, "Camera error", "An error occurred in function '{function}':\n{raw}\n\nError:\n{error}".format(
-                    function=func.__name__, raw=func, error=err
-                )
+                None,
+                "Camera error",
+                f"An error occurred in function '{func.__name__}':\n"
+                f"{func}\n\nError:\n{err}"
             )
             return None
 
@@ -105,7 +106,8 @@ class CameraWrapper:
 
     def _clearGphoto(self) -> None:
         """
-        _clearGphoto : Clear all processes origiating from gphoto2 that may lock the camera.
+        _clearGphoto : Clear all processes origiating from gphoto2 that may lock the
+        camera.
         """
         logger.debug("Clearing gphoto processes")
         completedProcess = subprocess.run(["pkill", "gphoto2"], check=False)
@@ -115,13 +117,17 @@ class CameraWrapper:
         else:
             logger.debug("Successfully cleared gphoto processes")
 
-        # clearedProcess = False  # pythonPID = os.getpid()  # for process in psutil.process_iter():  #     if  #  #
+        # clearedProcess = False  # pythonPID = os.getpid()  # for process in
+        # psutil.process_iter():  #     if  #  #
         # process.pid == pythonPID:  #         continue  # Don't kill current process
 
-        #     if "psutil" in process.name():  #         continue  # Don't kill the generator
+        #     if "psutil" in process.name():  #         continue  # Don't kill the
+        #     generator
 
-        #     if "gphoto2" in process.name():  #         logger.info("Killing %s", process)  #         try:  #  #  #
-        #     process.kill()  #             clearedProcess = True  #         except psutil.AccessDenied:  #  #  #  #
+        #     if "gphoto2" in process.name():  #         logger.info("Killing %s",
+        #     process)  #         try:  #  #  #
+        #     process.kill()  #             clearedProcess = True  #         except
+        #     psutil.AccessDenied:  #  #  #  #
         #     logger.warning("Failed to kill %s", process)
 
         # if not clearedProcess:  #     logger.info("No process cleared")
@@ -137,7 +143,8 @@ class CameraWrapper:
 
     def isConnected(self) -> bool:
         """
-        isConnected : Returns the connection status of the camera. True if connected, False otherwise
+        isConnected : Returns the connection status of the camera. True if connected,
+        False otherwise
 
         Returns:
             bool: Connection state
@@ -198,7 +205,8 @@ class CameraWrapper:
 
     def readPreview(self) -> bytes:
         """
-        readPreview : Read last available preview frame from the movie file and returns it.
+        readPreview : Read last available preview frame from the movie file and
+        returns it.
 
         Returns:
             bytes: Last available jpeg frame
@@ -274,7 +282,9 @@ class CameraWrapper:
         self.logfile.close()
 
     def _cleanUp(self) -> None:
-        exitFunctions = (self.cam.exit, self.stopPreview, self._cleanMovieFile, self._clearGphoto, self._closeLog,)
+        exitFunctions = (
+            self.cam.exit, self.stopPreview, self._cleanMovieFile, self._clearGphoto,
+            self._closeLog,)
 
         for func in exitFunctions:
             try:

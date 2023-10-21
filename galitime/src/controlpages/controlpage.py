@@ -134,19 +134,25 @@ class ControlPage(AbstractPage):
 
         # 6.2 Camera options button
         CamOptionButton = QPushButton("Caméra")
-        CamOptionButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.CAMERA))
+        CamOptionButton.clicked.connect(
+            lambda: self.mainWindow.loadPage(PageEnum.CAMERA)
+            )
         CamOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(CamOptionButton)
 
         # 6.3 Printer options button
         PrintOptionButton = QPushButton("Imprimante")
-        PrintOptionButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.PRINTER))
+        PrintOptionButton.clicked.connect(
+            lambda: self.mainWindow.loadPage(PageEnum.PRINTER)
+            )
         PrintOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(PrintOptionButton)
 
         # 6.4 Printer options button
         EmailSenderButton = QPushButton("Emails")
-        EmailSenderButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.MAIL))
+        EmailSenderButton.clicked.connect(
+            lambda: self.mainWindow.loadPage(PageEnum.MAIL)
+            )
         EmailSenderButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(EmailSenderButton)
 
@@ -279,7 +285,8 @@ class ControlPage(AbstractPage):
 
     def startPrintTimer(self) -> None:
         """
-        startPrintTimer : Displays a progress bar indicating the remaining time for the photo
+        startPrintTimer : Displays a progress bar indicating the remaining time for
+        the photo
         """
         self.printerTimer.ticksPassed = 0
         self.printerTimer.start(int(PRINT_TIME / 100))
