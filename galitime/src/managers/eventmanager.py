@@ -309,3 +309,5 @@ class EventManager:
         cls.updateInfoFile()
 
         return True
+
+EmailManager.setEventManager(EventManager)

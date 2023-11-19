@@ -30,6 +30,7 @@ logger.propagate = True
 class EmailManager:
     """emailManager : Class responsible for managing mail storage and access"""
 
+    eventManager = None
     config = configparser.ConfigParser()
     emailFolder = None
     mailSession: smtplib.SMTP = None
@@ -44,6 +45,16 @@ class EmailManager:
         if not folderpath.endswith("/"):
             folderpath += "/"
         cls.emailFolder = folderpath
+
+    @classmethod
+    def setEventManager(cls, eventManager: str) -> None:
+        """setEventManager : Sets the event manager object
+
+        Args:
+            eventManager (EventManager): Reference to the event manager
+        """
+        if eventManager is not None:
+            cls.eventManager = eventManager
 
     @classmethod
     def getEmailFolder(cls) -> str:
@@ -189,8 +200,14 @@ class EmailManager:
         """
         config = cls.getConfig()
 
+        # port = config["server"]["port"]
+        # host = config["server"]["hostname"]
+        # session = smtplib.SMTP(
+        #     host=host, port=port
+        # )
+
         session = smtplib.SMTP(
-            host=config["server"]["hostname"], port=config["server"]["port"]
+            "localhost"
         )
 
         cls.mailSession = session
@@ -260,11 +277,14 @@ class EmailManager:
         message = email.message.EmailMessage()
         message["Subject"] = config["message"]["subject"]
         message["From"] = config["message"]["from"]
-        message["To"] = emailAddress
+        message["To"] = [emailAddress]
 
         # Add HTML content
-        with open(config["files"]["body_path"], 'rb') as file:
-            message.add_related(file.read(), maintype='text', subtype='html')
+        with open(config["files"]["body_path"], 'rt') as file:
+            file_content = file.read()
+
+        file_content = cls._replaceMailTemplate(file_content, emailAddress, imagePathList);
+        message.add_related(bytes(file_content), maintype='text', subtype='html')
 
         # Add resources used in the HTML file
         for filepath in os.listdir(config["files"]["resources_path"]):
@@ -281,6 +301,72 @@ class EmailManager:
                 message.add_attachment(image.read(), maintype=maintype, subtype=subtype)
 
         return message
+
+    @classmethod
+    def _replaceMailTemplate(
+        cls,
+        fileContent: str,
+        emailAddr: str = None,
+        photoPathList: list[str] = None
+    ) -> str:
+        """
+        _replaceMailTemplate: Replaces template {tags} with appropriate values
+
+        Template {tags} include:
+            {event_name}
+            {event_date}
+            {photo_number}
+            {email}
+            {html_photos}
+
+        Args:
+            fileContent (str) : Template file content
+
+        Optional args:
+            emailAddr (str): Email recipient, defaults to None
+            photoPathList (list[str]): Photos URL, defaults to None
+
+        Returns:
+            str: File content with {tags} replaced
+        """
+
+        if "{event_name}" in fileContent:
+            fileContent = fileContent.replace(
+                "{event_name}",
+                cls.eventManager.getEventName()
+            )
+
+        if "{event_date}" in fileContent:
+            fileContent = fileContent.replace(
+                "{event_date}",
+                cls.eventManager.getEventDate()
+            )
+
+        if "{photo_number}" in fileContent:
+            fileContent = fileContent.replace(
+                "{photo_number}",
+                str(len(photoPathList))
+            )
+
+        if "{email}" in fileContent:
+            if emailAddr is None:
+                raise ValueError(
+                    "Email wasn't provided to the template populating function"
+                )
+            fileContent = fileContent.replace("{email}", str(emailAddr))
+
+        if "{html_photos}" in fileContent:
+            if photoPathList is None:
+                raise ValueError(
+                    "Photos URL list wasn't provided to the template populating "
+                    "function"
+                )
+            url_tag = cls.config['message']['photos_html_tag']
+            html_tags = [url_tag.format(os.path.basename(url)) for url in photoPathList]
+            fileContent = fileContent.replace("{html_photos}", '\n'.join(html_tags))
+
+        print(fileContent)
+        return fileContent
 
     @classmethod
     def sendSingleMail(cls, message: email.message.EmailMessage) -> None:
@@ -307,7 +393,7 @@ class EmailManager:
         """
         logger.info("Sending %u emails containing photos", len(mailFolderList))
 
-        cls.connectToMailServer()
+        # cls.connectToMailServer()
 
         mailsStatuses = []
         for emailFolder in mailFolderList:
@@ -340,3 +426,4 @@ class EmailManager:
             )
 
         cls.closeConnection()
+
