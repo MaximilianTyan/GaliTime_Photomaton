@@ -399,7 +399,7 @@ class EmailManager:
         """
         logger.info("Sending %u emails containing photos", len(mailFolderList))
 
-        # cls.connectToMailServer()
+        cls.connectToMailServer()
 
         mailsStatuses = []
         for emailFolder in mailFolderList:
