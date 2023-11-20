@@ -287,7 +287,13 @@ class EmailManager:
         message.add_related(file_content.encode('utf-8'), maintype='text', subtype='html')
 
         # Add resources used in the HTML file
-        for filepath in os.listdir(config["files"]["resources_path"]):
+        resources_path = config["files"]["resources_path"]
+        if not resources_path.endswith('/'):
+            resources_path += '/'
+
+        for filename in os.listdir(resources_path):
+            filepath = resources_path + filename
+
             mimeType, _ = mimetypes.guess_type(filepath)
             maintype, subtype = mimeType.split('/')
             with open(filepath, 'rb') as file:
