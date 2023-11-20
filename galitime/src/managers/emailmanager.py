@@ -284,7 +284,7 @@ class EmailManager:
             file_content = file.read()
 
         file_content = cls._replaceMailTemplate(file_content, emailAddress, imagePathList);
-        message.add_related(bytes(file_content), maintype='text', subtype='html')
+        message.add_related(file_content.encode('utf-8'), maintype='text', subtype='html')
 
         # Add resources used in the HTML file
         for filepath in os.listdir(config["files"]["resources_path"]):
