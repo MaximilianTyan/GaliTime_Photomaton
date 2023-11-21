@@ -190,30 +190,24 @@ class EmailManager:
         # cls.sendViaMail(mailList, photoPath)
 
     @classmethod
-    def connectToMailServer(cls) -> smtplib.SMTP:
+    def connectToMailServer(cls) -> smtplib.SMTP_SSL:
         """
         connectToMailServer : Creates and return a connection object to the mail server
         The connection parameters are configured in the email.cfg file.
 
         Returns:
-            smtplib.SMTP: COnnection session
+            smtplib.SMTP_SSL: Connection session
         """
         config = cls.getConfig()
 
-        # port = config["server"]["port"]
-        # host = config["server"]["hostname"]
-        # session = smtplib.SMTP(
-        #     host=host, port=port
-        # )
-
-        session = smtplib.SMTP(
-            "localhost"
+        port = config["server"]["port"]
+        host = config["server"]["hostname"]
+        session = smtplib.SMTP_SSL(
+            host=host, port=int(port)
         )
 
         cls.mailSession = session
         atexit.register(cls.closeConnection)
-
-        session.starttls()
 
         logger.info(
             "Opening connection to mail server " + config["server"]["hostname"] + ":" +
@@ -232,6 +226,8 @@ class EmailManager:
             password = file.read().strip()
 
         session.login(user=user, password=password)
+
+        return session
 
     @classmethod
     def closeConnection(cls) -> None:
@@ -283,7 +279,7 @@ class EmailManager:
         with open(config["files"]["body_path"], 'rt') as file:
             file_content = file.read()
 
-        file_content = cls._replaceMailTemplate(file_content, emailAddress, imagePathList);
+        file_content = cls._replaceMailTemplate(file_content, emailAddress, imagePathList)
         message.add_related(file_content.encode('utf-8'), maintype='text', subtype='html')
 
         # Add resources used in the HTML file

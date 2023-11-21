@@ -12,6 +12,7 @@ test*
 
 #Email config files
 **/*.key
+./email_config/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
