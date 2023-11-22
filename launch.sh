@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # Saving local changes
-git stash .
+git stash
 
 # Checks for updates
-git reset --soft HEAD
 git pull --ff
 
 # Reapplying local changes
