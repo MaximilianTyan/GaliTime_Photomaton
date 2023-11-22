@@ -7,6 +7,7 @@ Module in charge of email input
 """
 
 import logging
+import re
 
 from PyQt5.QtWidgets import QCompleter, QLineEdit
 from PyQt5.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout
@@ -18,6 +19,7 @@ from ..utilities.stylesheet import cssify
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
+EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
 
 class EmailInput(QDialog):
     """
@@ -30,6 +32,7 @@ class EmailInput(QDialog):
 
         self.TextInput = None
         self.ListView: QListWidget = None
+        self.ErrorLabel: QLabel = None
 
     def prompt(self, emailList) -> None:
         """
@@ -62,6 +65,11 @@ class EmailInput(QDialog):
 
         completer = QCompleter(emailList)
         self.TextInput.setCompleter(completer)
+
+        # 3. Error Label
+        self.ErrorLabel = QLabel("")
+        self.ErrorLabel.setStyleSheet("color: red")
+        MainVLayout.addWidget(self.ErrorLabel)
 
         # 3. List Label
         ListLabel = QLabel("Destinataires")
@@ -120,6 +128,13 @@ class EmailInput(QDialog):
             email (str): Email to add
         """
         _email = str(email).strip()
+
+        if not EMAIL_REGEX.match(email):
+            logger.error("Invalid email address %s", repr(_email))
+            self.ErrorLabel.setText("Email non valide")
+            return
+        self.ErrorLabel.setText("")
+
         self.emailList.append(_email)
         self._updateList()
         logger.info("Added destinator %s", _email)

@@ -170,6 +170,10 @@ class EmailManager:
         Input.prompt(cls.getEmailList())
         mailList = Input.getSelectedMails()
 
+        if len(mailList) == 0:
+            logger.warning("Mail destination list is empty, returning from func call")
+            return
+
         for mail in mailList:
             mailPath = cls.getMail(mail)
             if len(mailPath) == 0:

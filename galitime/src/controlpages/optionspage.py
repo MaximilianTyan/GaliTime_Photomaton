@@ -207,7 +207,7 @@ class OptionsPage(AbstractPage):
         parentFolderPath = QFileDialog.getExistingDirectory(
             self.mainWindow, caption="Dossier d'enregistrement"
         )
-        saveFolderPath = parentFolderPath + "/" + self.tempEventInfo["eventName"] + "/"
+        saveFolderPath = parentFolderPath + "/" + str(self.tempEventInfo["eventName"]) + "/"
         self._validateParentFolder(saveFolderPath)
 
     def chooseDecorFileButtonCall(self) -> None:

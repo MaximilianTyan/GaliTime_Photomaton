@@ -242,7 +242,7 @@ class ControlPage(AbstractPage):
         Returns:
             str: Full photo file path with name
         """
-        logger.info("Taking photo")
+        logger.info("Taking photo...")
         photoFolder = PhotoManager().getPhotoFolder()
 
         self.screenWindow.stopPreview()
@@ -251,13 +251,15 @@ class ControlPage(AbstractPage):
 
         if rawPhotoFullPath is None:
             rawPhotoFullPath = os.path.abspath(DEFAULT_PHOTO)
+            logger.warning("No photo path was supplied, defaulting to default image%s", rawPhotoFullPath)
 
         self.screenWindow.displayImage(rawPhotoFullPath)
 
         PhotoManager.incrementPhotoNumber()
         self.currentPhotoFullFilePath = self.screenWindow.exportImage(
-            EventManager.getEventFolder() + TEMP_PHOTO
+            EventManager.getEventFolder() + os.path.basename(rawPhotoFullPath)
         )
+        logger.debug("Stacked photo exported at %s", self.currentPhotoFullFilePath)
 
         return self.currentPhotoFullFilePath
 
