@@ -10,7 +10,7 @@ import inspect
 import logging
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QComboBox, QPushButton, QTextEdit
+from PyQt5.QtWidgets import QComboBox, QPushButton, QTextEdit, QLabel
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from ..abstractcontrolwindow import AbstractControlWindow
@@ -63,49 +63,75 @@ class CameraPage(AbstractPage):
         MainVLayout.setAlignment(Qt.AlignCenter)
         MainContainer.setLayout(MainVLayout)
 
-        # 2 Available cameras Layout
-        CamsHLayout = QHBoxLayout()
-        MainVLayout.addLayout(CamsHLayout)
+        # 1. Column Layout
+        ColumnsVLayout = QHBoxLayout()
+        MainVLayout.addLayout(ColumnsVLayout)
 
-        # 2.1 Choice box listing items
+        # 1.1 Left Column Layout
+        LeftVLayout = QVBoxLayout()
+        ColumnsVLayout.addLayout(LeftVLayout)
+
+        # 1.1.1 Choice box listing items
+        AbilitiesListLabel = QLabel("Informations sur la caméra")
+        AbilitiesListLabel.setAlignment(Qt.AlignHCenter)
+        LeftVLayout.addWidget(AbilitiesListLabel)
+
+        # 1.1.2 Abilities list button
+        self.PropertiesText = QTextEdit()
+        LeftVLayout.addWidget(self.PropertiesText)
+
+        # 1.2 Right Column Layout
+        RightVLayout = QVBoxLayout()
+        ColumnsVLayout.addLayout(RightVLayout)
+
+        # 1.2.1 Available cameras Layout
+        CamsVLayout = QVBoxLayout()
+        CamsVLayout.setAlignment(Qt.AlignTop)
+        RightVLayout.addLayout(CamsVLayout)
+
+        # 1.2.1.1 Camera listing label
+        CamListLabel = QLabel("Caméras disponibles")
+        CamListLabel.setAlignment(Qt.AlignHCenter)
+        CamsVLayout.addWidget(CamListLabel)
+
+        # 1.2.1.2 Available cameras list layout
+        CamsListHLayout = QHBoxLayout()
+        CamsVLayout.addLayout(CamsListHLayout)
+
+        # 1.2.1.2.1 Choice box listing items
         self.CamsChoiceBox = QComboBox()
         self.updateCamList()
-        CamsHLayout.addWidget(self.CamsChoiceBox)
+        CamsListHLayout.addWidget(self.CamsChoiceBox)
 
-        # 2.2 Update button
-        CamsUpdateButton = QPushButton("MAJ Liste caméra")
+        # 1.2.1.2.2 Update button
+        CamsUpdateButton = QPushButton("Rafraichir")
+        CamsUpdateButton.setStyleSheet("Thin")
         CamsUpdateButton.clicked.connect(self.updateCamList)
-        CamsHLayout.addWidget(CamsUpdateButton)
+        CamsListHLayout.addWidget(CamsUpdateButton)
 
-        # 3 Info Grid Layout
-        AbilitiesVLayout = QVBoxLayout()
-        MainVLayout.addLayout(AbilitiesVLayout)
+        # 1.2.2 Control buttons Layout
+        ControlButtonsVLayout = QVBoxLayout()
+        ControlButtonsVLayout.setAlignment(Qt.AlignBottom)
+        RightVLayout.addLayout(ControlButtonsVLayout)
 
-        # 3.1 Abilities list button
-        AbilitiesUpdateButton = QPushButton("Mise à jour")
+        # 1.2.2.1 Abilities list button
+        AbilitiesUpdateButton = QPushButton("Rafraichir")
+        AbilitiesUpdateButton.setStyleSheet("Thin")
         AbilitiesUpdateButton.clicked.connect(self.updateAll)
-        AbilitiesVLayout.addWidget(AbilitiesUpdateButton)
+        ControlButtonsVLayout.addWidget(AbilitiesUpdateButton)
 
-        # 3.1 Abilities list button
-        self.PropertiesText = QTextEdit()
-        AbilitiesVLayout.addWidget(self.PropertiesText)
-
-        # 4 Reconnect Return layout
-        ReconnectReturnLayout = QHBoxLayout()
-        MainVLayout.addLayout(ReconnectReturnLayout)
-
-        # 4. Reconnect camera button
+        # 1.2.2.2 Reconnect camera button
         self.ReconnectButton = QPushButton("Reconnexion caméra")
-        self.ReconnectButton.setStyleSheet(cssify("Big Disabled"))
+        self.ReconnectButton.setStyleSheet(cssify("Tall Disabled"))
         self.ReconnectButton.clicked.connect(self.reconnectCamera)
-        ReconnectReturnLayout.addWidget(self.ReconnectButton)
+        ControlButtonsVLayout.addWidget(self.ReconnectButton)
         self.updateReconnectButton()
 
-        # 5 Return button
+        # 1.2.2.3 Return button
         ReturnButton = QPushButton("Retour")
-        ReturnButton.setStyleSheet(cssify("Big Red"))
+        ReturnButton.setStyleSheet(cssify("Tall Red"))
         ReturnButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.CONTROL))
-        ReconnectReturnLayout.addWidget(ReturnButton)
+        ControlButtonsVLayout.addWidget(ReturnButton)
 
         logger.debug("Camera options page loaded")
         return MainContainer
@@ -127,10 +153,10 @@ class CameraPage(AbstractPage):
         displays disable button.
         """
         if not self.camera.isConnected():
-            self.ReconnectButton.setStyleSheet(cssify("Big Blue"))
+            self.ReconnectButton.setStyleSheet(cssify("Tall Blue"))
             self.ReconnectButton.setEnabled(True)
         else:
-            self.ReconnectButton.setStyleSheet(cssify("Big Disabled"))
+            self.ReconnectButton.setStyleSheet(cssify("Tall Disabled"))
             self.ReconnectButton.setEnabled(False)
 
     def updateCamList(self) -> None:
@@ -172,7 +198,7 @@ class CameraPage(AbstractPage):
                 continue
 
             if attr in (
-            "acquire", "append", "disown", "next", "own", "this", "thisown",):
+                    "acquire", "append", "disown", "next", "own", "this", "thisown",):
                 continue
 
             if attr.startswith("reserved"):
@@ -207,19 +233,28 @@ class CameraPage(AbstractPage):
         Returns:
             str: Raw HTML
         """
-        text = "<table>\n \
-                    <tr> \n \
-                        <td> Attribute </td>\n \
-                        <td> Value </td>\n \
-                    </tr>\n"
+        text = '\n'.join(
+            [
+                "<table>",
+                "<tr>",
+                "<td> Attribute </td>",
+                "<td> Value </td>",
+                "</tr>"
+            ]
+        )
 
         for key, value in datadict.items():
-            text += f"<tr> \n \
-                        <td> {key} </td>\n \
-                        <td> {value} </td>\n \
-                    </tr>\n"
+            text += '\n'.join(
+                [
+                    "<tr>",
+                    f"<td> {key} </td>",
+                    f"<td> {value} </td>",
+                    "</tr>"
+                ]
+            )
 
-        text += "<table>"
+        text += "</table>"
+        text += "<br>"
         return text
 
     def updateAll(self) -> None:

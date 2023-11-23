@@ -39,6 +39,9 @@ class MailPage(AbstractPage):
         self.EmailList: QListWidget = None
         self.MailCountEdit: QLineEdit = None
         self.mainWindow = mainWindow
+        self.ServerHostnameEdit = None
+        self.ServerPortEdit = None
+        self.LoginUsernameEdit = None
 
     def load(self) -> QWidget:
         """Loads the control page in a QWidget and returns it.
@@ -101,10 +104,10 @@ class MailPage(AbstractPage):
 
         EmailManager.readConfig()
         # 1.2.1.2 Server hostname LineEdit
-        ServerHostnameEdit = QLineEdit(EmailManager.getConfig()["server"]["hostname"])
-        ServerHostnameEdit.setEnabled(False)
-        ServerHostnameEdit.setStyleSheet(NORMAL_STYLE)
-        InfoGridLayout.addWidget(ServerHostnameEdit, 2, 2)
+        self.ServerHostnameEdit = QLineEdit()
+        self.ServerHostnameEdit.setEnabled(False)
+        self.ServerHostnameEdit.setStyleSheet(NORMAL_STYLE)
+        InfoGridLayout.addWidget(self.ServerHostnameEdit, 2, 2)
 
         # 1.2.2.1 Server port label
         ServerPortLabel = QLabel("Port du serveur:")
@@ -112,10 +115,10 @@ class MailPage(AbstractPage):
         InfoGridLayout.addWidget(ServerPortLabel, 3, 1)
 
         # 1.2.2.2 Server port LineEdit
-        ServerPortEdit = QLineEdit(EmailManager.getConfig()["server"]["port"])
-        ServerPortEdit.setEnabled(False)
-        ServerPortEdit.setStyleSheet(NORMAL_STYLE)
-        InfoGridLayout.addWidget(ServerPortEdit, 3, 2)
+        self.ServerPortEdit = QLineEdit()
+        self.ServerPortEdit.setEnabled(False)
+        self.ServerPortEdit.setStyleSheet(NORMAL_STYLE)
+        InfoGridLayout.addWidget(self.ServerPortEdit, 3, 2)
 
         # 1.2.3.1 Server port label
         LoginUsernameLabel = QLabel("Identifiant:")
@@ -123,10 +126,10 @@ class MailPage(AbstractPage):
         InfoGridLayout.addWidget(LoginUsernameLabel, 4, 1)
 
         # 1.2.3.2 Server port LineEdit
-        LoginUsernameEdit = QLineEdit(EmailManager.getConfig()["user"]["login"])
-        LoginUsernameEdit.setEnabled(False)
-        LoginUsernameEdit.setStyleSheet(NORMAL_STYLE)
-        InfoGridLayout.addWidget(LoginUsernameEdit, 4, 2)
+        self.LoginUsernameEdit = QLineEdit()
+        self.LoginUsernameEdit.setEnabled(False)
+        self.LoginUsernameEdit.setStyleSheet(NORMAL_STYLE)
+        InfoGridLayout.addWidget(self.LoginUsernameEdit, 4, 2)
 
         # 2. Send / Quit button layout
         SendQuitButtonsHLayout = QHBoxLayout()
@@ -143,6 +146,8 @@ class MailPage(AbstractPage):
         BackButton.setStyleSheet(cssify("Tall Red"))
         BackButton.clicked.connect(lambda: self.mainWindow.loadPage(PageEnum.CONTROL))
         SendQuitButtonsHLayout.addWidget(BackButton)
+
+        self.readConfig()
 
         logger.debug("Mail page loaded")
         return MainContainer
@@ -184,3 +189,10 @@ class MailPage(AbstractPage):
                 "An mail sending error occurred while trying to send "
                 f"{len(selectedEmailFolders)} mails:\n\nError:\n{err}"
             )
+
+    def readConfig(self):
+        EmailManager.readConfig()
+        self.ServerHostnameEdit.setText(EmailManager.getConfigField("server/hostname"))
+        self.ServerPortEdit.setText(EmailManager.getConfigField("server/port"))
+        self.LoginUsernameEdit.setText(EmailManager.getConfigField("user/login"))
+

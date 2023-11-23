@@ -107,6 +107,10 @@ class EmailInput(QDialog):
     def _removeItem(self) -> None:
         item = self.ListView.currentItem()
 
+        if item is None:
+            logger.debug("Tried deleting unselectionned item, ignoring")
+            return
+
         if item.text() in self.emailList:
             self.emailList.remove(item.text())
 

@@ -12,7 +12,7 @@ import os
 import cups
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
-from PyQt5.QtWidgets import QLabel, QProgressDialog, QPushButton
+from PyQt5.QtWidgets import QLabel, QMessageBox, QProgressDialog, QPushButton
 
 from ..abstractcontrolwindow import AbstractControlWindow
 from ..controlpages.abstractpage import AbstractPage
@@ -23,7 +23,7 @@ from ..managers.photomanager import PhotoManager
 from ..peripherals.camera import CameraWrapper
 from ..peripherals.printer import ImagePrinter
 from ..screenwindow import ScreenWindow
-from ..utilities.constants import DEFAULT_PHOTO, TEMP_PHOTO
+from ..utilities.constants import DEFAULT_PHOTO
 from ..utilities.constants import PRINT_TIME
 from ..utilities.stylesheet import cssify
 
@@ -136,7 +136,7 @@ class ControlPage(AbstractPage):
         CamOptionButton = QPushButton("Caméra")
         CamOptionButton.clicked.connect(
             lambda: self.mainWindow.loadPage(PageEnum.CAMERA)
-            )
+        )
         CamOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(CamOptionButton)
 
@@ -144,7 +144,7 @@ class ControlPage(AbstractPage):
         PrintOptionButton = QPushButton("Imprimante")
         PrintOptionButton.clicked.connect(
             lambda: self.mainWindow.loadPage(PageEnum.PRINTER)
-            )
+        )
         PrintOptionButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(PrintOptionButton)
 
@@ -152,7 +152,7 @@ class ControlPage(AbstractPage):
         EmailSenderButton = QPushButton("Emails")
         EmailSenderButton.clicked.connect(
             lambda: self.mainWindow.loadPage(PageEnum.MAIL)
-            )
+        )
         EmailSenderButton.setStyleSheet(cssify("Tall"))
         OptionHLayout.addWidget(EmailSenderButton)
 
@@ -251,7 +251,10 @@ class ControlPage(AbstractPage):
 
         if rawPhotoFullPath is None:
             rawPhotoFullPath = os.path.abspath(DEFAULT_PHOTO)
-            logger.warning("No photo path was supplied, defaulting to default image%s", rawPhotoFullPath)
+            logger.warning(
+                "No photo path was supplied, defaulting to default image%s",
+                rawPhotoFullPath
+                )
 
         self.screenWindow.displayImage(rawPhotoFullPath)
 
@@ -274,9 +277,20 @@ class ControlPage(AbstractPage):
             ImagePrinter.printImage(self.currentPhotoFullFilePath)
         except FileNotFoundError as err:
             logger.error("Printer error: %s", str(err))
+            QMessageBox.critical(
+                self.mainWindow,
+                "Printer error",
+                f"An internal Galitime printer driver error has occured:\n "
+                f"ImagePrinter error: {str(err)}"
+                )
             return
         except cups.IPPError as err:
             logger.error("CUPS error: %s", str(err))
+            QMessageBox.critical(
+                self.mainWindow,
+                "CUPS error",
+                f"An error has been raised by the CUPS driver:\nCUPS error: {str(err)}"
+                )
             return
 
         self.progressDialog = QProgressDialog("Printing photo...", "Close", 0, 100)

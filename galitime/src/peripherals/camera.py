@@ -294,7 +294,10 @@ class CameraWrapper:
 
     @promptError
     def getAbilities(self) -> tuple:
-        return tuple(self.cam.get_abilities())
+        try:
+            return tuple(self.cam.get_abilities())
+        except TypeError:
+            return tuple()
 
     @promptError
     def getAbout(self):

@@ -214,8 +214,9 @@ class EventManager:
                 yesNoButton = QMessageBox.question(
                     cls.parent,
                     "Folder already exists",
-                    f"""Folder {name} already exists in f{path}
-                    Do you want to overwrite it ? All previous data will be lost""", )
+                    f"Folder {name} already exists in {path}\nDo you want to "
+                    f"overwrite it ? All previous data will be lost"
+                )
                 if yesNoButton != QMessageBox.Yes:
                     return
 
@@ -309,5 +310,6 @@ class EventManager:
         cls.updateInfoFile()
 
         return True
+
 
 EmailManager.setEventManager(EventManager)

@@ -189,12 +189,10 @@ class OptionsPage(AbstractPage):
 
         TitleLabel.setFocus()
 
-        if not self.createEvent:
-            # Display data loaded from save file
-            self.changeEventName()
-            self.changeEventDate()
-            self._validateParentFolder(EventManager.getEventFolder())
-            self._validateDecorFile(ScreenWindow.getScreen().getDecorFile())
+        self.changeEventName()
+        self.changeEventDate()
+        self._validateParentFolder(EventManager.getEventFolder())
+        self._validateDecorFile(ScreenWindow.getScreen().getDecorFile())
 
         logger.debug("Options page loaded")
         return MainContainer
@@ -207,7 +205,13 @@ class OptionsPage(AbstractPage):
         parentFolderPath = QFileDialog.getExistingDirectory(
             self.mainWindow, caption="Dossier d'enregistrement"
         )
-        saveFolderPath = parentFolderPath + "/" + str(self.tempEventInfo["eventName"]) + "/"
+        if len(parentFolderPath) == 0:
+            logger.warning("Chosen save folder path is empty")
+
+        saveFolderPath = parentFolderPath + '/' + str(
+            self.tempEventInfo["eventName"]
+            ) + '/'
+
         self._validateParentFolder(saveFolderPath)
 
     def chooseDecorFileButtonCall(self) -> None:
@@ -223,7 +227,14 @@ class OptionsPage(AbstractPage):
     def _validateParentFolder(self, saveFolderPath: str) -> None:
         self.SaveFolderPathInput.setText(saveFolderPath)
 
-        if not os.path.exists(saveFolderPath):
+        logger.debug("Validating save folder path: %s", repr(saveFolderPath))
+
+        if not os.path.exists(os.path.dirname(saveFolderPath)):
+            logger.error(
+                "Parent folder of event folder doesn't exist: %s",
+                repr(os.path.dirname(saveFolderPath))
+                )
+
             self.SaveFolderPathInput.setStyleSheet(INPUT_RED)
             self.tempEventInfo["saveFolder"] = None
             return
@@ -235,6 +246,7 @@ class OptionsPage(AbstractPage):
         self.DecorFileInput.setText(decorFilePath)
 
         if not os.path.exists(decorFilePath):
+            logger.error("Decor file doesn't exist: %s", decorFilePath)
             self.DecorFileInput.setStyleSheet(INPUT_RED)
             self.tempEventInfo["decorFile"] = None
             return

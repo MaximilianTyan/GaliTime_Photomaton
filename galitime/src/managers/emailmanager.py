@@ -19,9 +19,12 @@ import shutil
 # Email sending
 import smtplib
 
+from PyQt5.QtWidgets import QMessageBox
+
 from .emailinput import EmailInput
 from ..utilities.constants import EMAIL_CONFIG_FILE
 from ..utilities.constants import EMAIL_INFO_FILE, ENCODING
+from ..utilities.constants import DEFAULT_PHOTO
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -131,19 +134,39 @@ class EmailManager:
         parser object accordingly
         """
         if not os.path.exists(EMAIL_CONFIG_FILE):
+            QMessageBox.critical(
+                cls.eventManager.parent,
+                "Missing email configuration file",
+                f"No {EMAIL_CONFIG_FILE} file found\n"
+            )
             logger.warning("Missing email server config file: %s", EMAIL_CONFIG_FILE)
             return
+
         cls.config.read(EMAIL_CONFIG_FILE)
         logger.debug("Read %s config file", EMAIL_CONFIG_FILE)
 
     @classmethod
-    def getConfig(cls) -> configparser.ConfigParser:
-        """Returns the current mail configuration as a config parser.
+    def getConfigField(cls, path: str) -> str:
+        """Returns field from the configuration, prompting an error if not found
+
+        Args:
+            path (str): Variable to get in the form 'section/value'
 
         Returns:
-            configparser.ConfigParser: Mail config parser
+            str: Configuration value if found, None if not found
         """
-        return cls.config
+
+        section, variable = path.split('/', 1)
+
+        if section not in cls.config:
+            error_msg = f"No '{section}' section in email config file"
+        elif variable not in cls.config[section]:
+            error_msg = (f"No '{variable}' value in '{section}' section in email "
+                         f"config file")
+        else:
+            return cls.config[section][variable]
+        logger.error(error_msg)
+        QMessageBox.critical(cls.eventManager.parent, "Configuration error", error_msg)
 
     @classmethod
     def _readEmailInfo(cls, mail: str) -> dict:
@@ -166,6 +189,9 @@ class EmailManager:
         Args:
             photoPath (str): photo filepath to add to email
         """
+        if os.path.basename(photoPath) == DEFAULT_PHOTO:
+            logger.warning("Ignoring default photo %s", DEFAULT_PHOTO)
+
         Input = EmailInput()
         Input.prompt(cls.getEmailList())
         mailList = Input.getSelectedMails()
@@ -189,7 +215,7 @@ class EmailManager:
             mailDict["photoNumber"] += 1
             cls._writeEmailInfo(mail, mailDict)
 
-        logger.info("Added photo to %s mail folders", repr(mailList))
+        logger.info("Added photo %s to %s mail folders", photoPath, repr(mailList))
 
         # cls.sendViaMail(mailList, photoPath)
 
@@ -200,36 +226,45 @@ class EmailManager:
         The connection parameters are configured in the email.cfg file.
 
         Returns:
-            smtplib.SMTP_SSL: Connection session
+            smtplib.SMTP_SSL: Connection session or None if error occured
         """
-        config = cls.getConfig()
+        cls.readConfig()
+        hostname = cls.getConfigField("server/hostname")
+        port = cls.getConfigField("server/port")
+        if hostname is None or port is None:
+            return
 
-        port = config["server"]["port"]
-        host = config["server"]["hostname"]
-        session = smtplib.SMTP_SSL(
-            host=host, port=int(port)
+        logger.info(
+            "Opening connection to mail server " + hostname + ":" +
+            str(port)
         )
+
+        try:
+            session = smtplib.SMTP_SSL(
+                host=hostname,
+                port=int(port)
+            )
+        except ConnectionRefusedError:
+            error_msg = "Connection has been refused by server"
+            logger.error(error_msg)
+            QMessageBox.critical(cls.eventManager.parent, "Server error", error_msg)
+            return
 
         cls.mailSession = session
         atexit.register(cls.closeConnection)
 
-        logger.info(
-            "Opening connection to mail server " + config["server"]["hostname"] + ":" +
-            config["server"]["hostname"]
-        )
+        username = cls.getConfigField("user/login")
+        key_file = int(cls.getConfigField("files/key_file"))
 
         # Loging in
-        user = config["user"]["login"]
-        keyFile = config["files"]["key_path"]
-
-        if not os.path.exists(keyFile):
-            raise FileNotFoundError(f"No {keyFile} file could be found for logging in")
+        if not os.path.exists(key_file):
+            raise FileNotFoundError(f"No {key_file} file could be found for logging in")
         with open(
-                keyFile, "rt", encoding=ENCODING
+                key_file, "rt", encoding=ENCODING
         ) as file:
             password = file.read().strip()
 
-        session.login(user=user, password=password)
+        session.login(user=username, password=password)
 
         return session
 
@@ -238,6 +273,9 @@ class EmailManager:
         """
         closeConnection : Closes the connection to the SMTP server
         """
+        if cls.mailSession is None:
+            logger.debug("Attempted to close non existant server connection, returning")
+            return
         try:
             cls.mailSession.close()
             logger.info("Server connection closed")
@@ -271,23 +309,31 @@ class EmailManager:
         # | | -- Image(Embedded)
         # | -- Attachment
 
-        config = cls.getConfig()
+        cls.readConfig()
 
         # Email writing
         message = email.message.EmailMessage()
-        message["Subject"] = config["message"]["subject"]
-        message["From"] = config["message"]["from"]
+        message["Subject"] = cls.getConfigField("message/subject")
+        message["From"] = cls.getConfigField("message/from")
         message["To"] = [emailAddress]
 
         # Add HTML content
-        with open(config["files"]["body_path"], 'rt') as file:
+        with open(cls.getConfigField("files/body_path"), 'rt') as file:
             file_content = file.read()
 
-        file_content = cls._replaceMailTemplate(file_content, emailAddress, imagePathList)
-        message.add_related(file_content.encode('utf-8'), maintype='text', subtype='html')
+        file_content = cls._replaceMailTemplate(
+            file_content,
+            emailAddress,
+            imagePathList
+        )
+        message.add_related(
+            file_content.encode('utf-8'),
+            maintype='text',
+            subtype='html'
+        )
 
         # Add resources used in the HTML file
-        resources_path = config["files"]["resources_path"]
+        resources_path = cls.getConfigField("files/resources_path")
         if not resources_path.endswith('/'):
             resources_path += '/'
 
@@ -296,17 +342,51 @@ class EmailManager:
 
             mimeType, _ = mimetypes.guess_type(filepath)
             maintype, subtype = mimeType.split('/')
+            cid = cls._getCIDfromFile(filename)
+
             with open(filepath, 'rb') as file:
-                message.add_related(file.read(), maintype=maintype, subtype=subtype)
+                message.add_related(
+                    file.read(),
+                    maintype=maintype,
+                    subtype=subtype,
+                    filename=filename,
+                    cid=cid
+                )
 
         # Attachements, here photos
         for imagePath in imagePathList:
             with open(imagePath, 'rb') as image:
                 mimeType, _ = mimetypes.guess_type(imagePath)
                 maintype, subtype = mimeType.split('/')
-                message.add_attachment(image.read(), maintype=maintype, subtype=subtype)
+                filename = os.path.basename(imagePath)
+                cid = cls._getCIDfromFile(filename)
+                message.add_attachment(
+                    image.read(),
+                    maintype=maintype,
+                    subtype=subtype,
+                    filename=filename,
+                    cid=cid
+                )
 
         return message
+
+    @classmethod
+    def _getCIDfromFile(cls, filename: str) -> str:
+        """_getCIDfromFile: Generates an email Content ID from a filename
+
+        Args:
+            filename (str): filename to convert into a cid
+
+        Returns:
+            str: Generated Content ID from filename
+        """
+        cid = ""
+        for char in filename:
+            if char.isalpha():
+                cid += char
+            else:
+                cid += '_'
+        return cid
 
     @classmethod
     def _replaceMailTemplate(
@@ -367,8 +447,13 @@ class EmailManager:
                     "Photos URL list wasn't provided to the template populating "
                     "function"
                 )
-            url_tag = cls.config['message']['photos_html_tag']
-            html_tags = [url_tag.format(os.path.basename(url)) for url in photoPathList]
+            url_tag = cls.getConfigField("message/photos_html_tag")
+
+            html_tags = []
+            for photoPath in photoPathList[:3]:
+                inlineFilename = cls._getCIDfromFile(os.path.basename(photoPath))
+                html_tags.append(url_tag.format('cid:' + inlineFilename))
+
             fileContent = fileContent.replace("{html_photos}", '\n'.join(html_tags))
 
         print(fileContent)
@@ -382,7 +467,9 @@ class EmailManager:
             message (email.message.EmailMessage):
         """
         logger.info("Sending single mail...")
-        cls.connectToMailServer()
+        if cls.connectToMailServer() is None:
+            logger.error("Failed to establish connection to mail server, returning")
+            return
 
         status = cls.mailSession.send_message(message.as_string())
         logger.info("Mail send request returned status %s", str(status))
@@ -399,7 +486,9 @@ class EmailManager:
         """
         logger.info("Sending %u emails containing photos", len(mailFolderList))
 
-        cls.connectToMailServer()
+        if cls.connectToMailServer() is None:
+            logger.error("Failed to establish connection to mail server, returning")
+            return
 
         mailsStatuses = []
         for emailFolder in mailFolderList:
@@ -418,6 +507,7 @@ class EmailManager:
                 imagePathList.remove(folderPath + EMAIL_INFO_FILE)
 
             message = cls.createMailMessage(emailAddress, imagePathList)
+            print(message.as_string())
             errorsDict = cls.mailSession.send_message(message)
             if len(errorsDict):
                 mailsStatuses.append(errorsDict)
@@ -432,4 +522,3 @@ class EmailManager:
             )
 
         cls.closeConnection()
-
