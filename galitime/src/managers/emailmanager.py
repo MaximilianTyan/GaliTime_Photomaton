@@ -352,14 +352,16 @@ class EmailManager:
                     filename=filename,
                     cid=cid
                 )
+            logger.debug("Attached %s in 'related' mail section", filepath)
 
         # Attachements, here photos
         for imagePath in imagePathList:
+            mimeType, _ = mimetypes.guess_type(imagePath)
+            maintype, subtype = mimeType.split('/')
+            filename = os.path.basename(imagePath)
+            cid = cls._getCIDfromFile(filename)
+
             with open(imagePath, 'rb') as image:
-                mimeType, _ = mimetypes.guess_type(imagePath)
-                maintype, subtype = mimeType.split('/')
-                filename = os.path.basename(imagePath)
-                cid = cls._getCIDfromFile(filename)
                 message.add_attachment(
                     image.read(),
                     maintype=maintype,
@@ -367,6 +369,7 @@ class EmailManager:
                     filename=filename,
                     cid=cid
                 )
+            logger.debug("Attached %s in 'related' mail section", imagePath)
 
         return message
 
@@ -382,7 +385,7 @@ class EmailManager:
         """
         cid = ""
         for char in filename:
-            if char.isalpha():
+            if char.isalnum():
                 cid += char
             else:
                 cid += '_'
@@ -450,7 +453,7 @@ class EmailManager:
             url_tag = cls.getConfigField("message/photos_html_tag")
 
             html_tags = []
-            for photoPath in photoPathList[:3]:
+            for photoPath in photoPathList[:min(3, len(photoPathList)-1)]:
                 inlineFilename = cls._getCIDfromFile(os.path.basename(photoPath))
                 html_tags.append(url_tag.format('cid:' + inlineFilename))
 
@@ -503,14 +506,18 @@ class EmailManager:
             imagePathList = [
                 folderPath + imagePath for imagePath in os.listdir(folderPath)
             ]
+            # Removing EMAIL_INFO_FILE so only photos should remain
             if folderPath + EMAIL_INFO_FILE in imagePathList:
                 imagePathList.remove(folderPath + EMAIL_INFO_FILE)
 
-            message = cls.createMailMessage(emailAddress, imagePathList)
-            print(message.as_string())
-            errorsDict = cls.mailSession.send_message(message)
-            if len(errorsDict):
-                mailsStatuses.append(errorsDict)
+            for i in range(0, len(imagePathList), 4):
+                photoBatch = imagePathList[i : min(i+4, len(imagePathList))]
+
+                message = cls.createMailMessage(emailAddress, photoBatch)
+                print(message.as_string())
+                errorsDict = cls.mailSession.send_message(message)
+                if len(errorsDict):
+                    mailsStatuses.append(errorsDict)
 
         if not mailsStatuses:
             logger.info("All mails have been sent")
