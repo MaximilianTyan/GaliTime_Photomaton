@@ -254,7 +254,7 @@ class EmailManager:
         atexit.register(cls.closeConnection)
 
         username = cls.getConfigField("user/login")
-        key_file = int(cls.getConfigField("files/key_file"))
+        key_file = cls.getConfigField("files/key_path")
 
         # Loging in
         if not os.path.exists(key_file):
