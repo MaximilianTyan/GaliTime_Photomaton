@@ -56,8 +56,7 @@ Chaque fichier essaie de respecter au possible les bonnes pratiques PEP par l'in
 
 ### Particularités
 
-1. La librairie gphoto2 ne supporte pas l'enregistrement de videos, nécessaire à l'aperçu avant photo. Le paquet linux supporte cette fonctionnalité et a donc été uilisé en complément.
-Ainsi, un appel à la librairie `subprocess` est nécessaire pour déclencher l'acquisition.
+1. La librairie gphoto2 ne supporte pas l'enregistrement de videos, nécessaire à l'aperçu avant photo. Le paquet linux gphoto2 supporte cette fonctionnalité et a donc été utilisé avec la librairie `subprocess`.
 
 3. Le format `.mjpg` n'etant pas supporté par PyQt5 et son format étant simple, le fichier d'output generé par la capture est directement lu. La derniere frame `.jpeg` est alors extraite et affichee en tant qu'image.
 
@@ -65,9 +64,7 @@ Ainsi, un appel à la librairie `subprocess` est nécessaire pour déclencher l'
 
 ---
 
-## TODO
+## TODO ?
 
-- Driver imprimante (à tester)
-- Bot envoi mail (à tester)
 - Organisation en albums / pages
 - Photo supprimée si pas de destinataire
