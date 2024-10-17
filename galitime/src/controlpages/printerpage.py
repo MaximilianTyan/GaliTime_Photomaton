@@ -193,7 +193,7 @@ class PrinterPage(AbstractPage):
             optionEntry = QTableWidgetItem(name)
             self.PrinterJobsTable.setItem(row, 0, optionEntry)
 
-            optionValueEntry = QTableWidgetItem(value)
+            optionValueEntry = QTableWidgetItem(str(value))
             self.PrinterJobsTable.setItem(row, 1, optionValueEntry)
 
     def setPrinter(self) -> None:

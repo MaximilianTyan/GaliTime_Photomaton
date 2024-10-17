@@ -208,7 +208,7 @@ class OptionsPage(AbstractPage):
         if len(parentFolderPath) == 0:
             logger.warning("Chosen save folder path is empty")
 
-        saveFolderPath = parentFolderPath + '/' + str(
+        saveFolderPath = parentFolderPath.removesuffix('/') + '/' + str(
             self.tempEventInfo["eventName"]
             ) + '/'
 
