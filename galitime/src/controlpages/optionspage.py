@@ -191,7 +191,7 @@ class OptionsPage(AbstractPage):
 
         self.changeEventName()
         self.changeEventDate()
-        self._validateParentFolder(EventManager.getEventFolder())
+        self._validateSaveFolder(EventManager.getEventFolder())
         self._validateDecorFile(ScreenWindow.getScreen().getDecorFile())
 
         logger.debug("Options page loaded")
@@ -208,11 +208,9 @@ class OptionsPage(AbstractPage):
         if len(parentFolderPath) == 0:
             logger.warning("Chosen save folder path is empty")
 
-        saveFolderPath = parentFolderPath.removesuffix('/') + '/' + str(
-            self.tempEventInfo["eventName"]
-            ) + '/'
+        saveFolderPath = parentFolderPath.removesuffix('/') + '/' + str(self.tempEventInfo["eventName"]) + '/'
 
-        self._validateParentFolder(saveFolderPath)
+        self._validateSaveFolder(saveFolderPath)
 
     def chooseDecorFileButtonCall(self) -> None:
         """
@@ -224,15 +222,16 @@ class OptionsPage(AbstractPage):
         )[0]
         self._validateDecorFile(selectedFilename)
 
-    def _validateParentFolder(self, saveFolderPath: str) -> None:
+    def _validateSaveFolder(self, saveFolderPath: str) -> None:
         self.SaveFolderPathInput.setText(saveFolderPath)
 
         logger.debug("Validating save folder path: %s", repr(saveFolderPath))
 
-        if not os.path.exists(os.path.dirname(saveFolderPath)):
+        parentFolder = os.path.dirname(saveFolderPath.removesuffix('/'))
+        if not os.path.exists(parentFolder):
             logger.error(
                 "Parent folder of event folder doesn't exist: %s",
-                repr(os.path.dirname(saveFolderPath))
+                repr(parentFolder)
                 )
 
             self.SaveFolderPathInput.setStyleSheet(INPUT_RED)

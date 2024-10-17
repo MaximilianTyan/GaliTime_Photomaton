@@ -514,7 +514,6 @@ class EmailManager:
                 photoBatch = imagePathList[i : min(i+4, len(imagePathList))]
 
                 message = cls.createMailMessage(emailAddress, photoBatch)
-                print(message.as_string())
                 errorsDict = cls.mailSession.send_message(message)
                 if len(errorsDict):
                     mailsStatuses.append(errorsDict)
